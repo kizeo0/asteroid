@@ -587,6 +587,16 @@ function gameOver(message = "¡Has Perdido!") {
     document.getElementById('instructions').style.display = 'none'; // Ocultar instrucciones
 }
 
+function simulateKey(code, type = 'keydown') {
+    const event = new KeyboardEvent(type, { key: code });
+    document.dispatchEvent(event);
+}
+
+document.getElementById('btn-up').addEventListener('touchstart', () => simulateKey('ArrowUp'));
+document.getElementById('btn-left').addEventListener('touchstart', () => simulateKey('ArrowLeft'));
+document.getElementById('btn-right').addEventListener('touchstart', () => simulateKey('ArrowRight'));
+document.getElementById('btn-down').addEventListener('touchstart', () => simulateKey('ArrowDown'));
+document.getElementById('btn-shoot').addEventListener('touchstart', () => simulateKey(' ', 'keydown'));
 
 // --- Inicio del Juego ---
 startButton.addEventListener('click', startGame);
@@ -600,53 +610,3 @@ ctx.textAlign = 'center';
 ctx.fillText('¡Prepara tus láseres!', canvas.width / 2, canvas.height / 2 - 30);
 ctx.fillText('Haz clic en "Iniciar Juego" cuando estés listo.', canvas.width / 2, canvas.height / 2);
 document.getElementById('instructions').style.display = 'none'; // Ocultar instrucciones al inicio
-
-// Controles táctiles con pad fuera del canvas
-const leftBtn = document.getElementById('leftBtn');
-const rightBtn = document.getElementById('rightBtn');
-const upBtn = document.getElementById('upBtn');
-const downBtn = document.getElementById('downBtn'); // si deseas usar ↓ en el futuro
-const fireBtn = document.getElementById('fireBtn');
-
-if (leftBtn && rightBtn && upBtn && fireBtn) {
-    const simulateKey = (keyCode, type) => {
-        const event = new KeyboardEvent(type, { keyCode: keyCode, which: keyCode });
-        document.dispatchEvent(event);
-    };
-
-    leftBtn.addEventListener('touchstart', () => simulateKey(37, 'keydown'));
-    leftBtn.addEventListener('touchend', () => simulateKey(37, 'keyup'));
-
-    rightBtn.addEventListener('touchstart', () => simulateKey(39, 'keydown'));
-    rightBtn.addEventListener('touchend', () => simulateKey(39, 'keyup'));
-
-    upBtn.addEventListener('touchstart', () => simulateKey(38, 'keydown'));
-    upBtn.addEventListener('touchend', () => simulateKey(38, 'keyup'));
-
-    fireBtn.addEventListener('touchstart', () => simulateKey(32, 'keydown'));
-    fireBtn.addEventListener('touchend', () => simulateKey(32, 'keyup'));
-
-    if (downBtn) {
-        downBtn.addEventListener('touchstart', () => simulateKey(40, 'keydown'));
-        downBtn.addEventListener('touchend', () => simulateKey(40, 'keyup'));
-    }
-}
-
-
-// ✅ Control táctil funcional sin KeyboardEvent
-const touchControl = (btn, key, flag) => {
-    if (!btn) return;
-    btn.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        window[flag] = true;
-    });
-    btn.addEventListener('touchend', (e) => {
-        e.preventDefault();
-        window[flag] = false;
-    });
-};
-
-touchControl(document.getElementById('leftBtn'), 37, 'leftPressed');
-touchControl(document.getElementById('rightBtn'), 39, 'rightPressed');
-touchControl(document.getElementById('upBtn'), 38, 'upPressed');
-touchControl(document.getElementById('fireBtn'), 32, 'spacePressed');

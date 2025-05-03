@@ -19,20 +19,20 @@
         <div id="instructions">
             Usa las flechas ← → para girar, ↑ para acelerar, y [Espacio] para disparar.
         </div>
-    </div>
 
-  <!-- fuera del canvas -->
-<div id="mobile-wrapper">
-    <div id="pad-controls">
-        <button id="upBtn">↑</button>
-        <div>
-            <button id="leftBtn">←</button>
-            <button id="downBtn" disabled style="opacity: 0.2;">↓</button>
-            <button id="rightBtn">→</button>
+        <!-- Controles táctiles -->
+        <div id="touch-controls">
+            <div class="dpad">
+                <button id="btn-up">↑</button>
+                <div class="middle-row">
+                    <button id="btn-left">←</button>
+                    <button id="btn-right">→</button>
+                </div>
+                <button id="btn-down">↓</button>
+            </div>
+            <button id="btn-shoot">Disparar</button>
         </div>
     </div>
-    <button id="fireBtn">⦿</button>
-</div>
 
     <audio id="bgMusic" src="music.mp3" preload="auto" loop></audio>
     <audio id="shotSound" src="shot.mp3" preload="auto"></audio>
