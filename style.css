@@ -16,14 +16,19 @@ h1 {
 }
 
 #game-container {
-    position: relative; /* Para posicionar UI y botón */
+    position: relative; /* Para posicionar UI, botón de inicio y controles móviles */
     border: 2px solid #0f0; /* Borde neón */
     box-shadow: 0 0 10px #0f0;
+    /* Asegura que el contenedor sea responsive */
+    max-width: 100%;
+    overflow: hidden; /* Previene que los controles fijos causen scroll si sobresalen */
 }
 
 canvas {
     display: block; /* Elimina espacio extra debajo del canvas */
     background-color: #000; /* Fondo negro si la imagen tarda en cargar */
+    max-width: 100%; /* Asegura que el canvas se ajuste a la pantalla */
+    height: auto; /* Mantiene la proporción */
 }
 
 #ui {
@@ -32,27 +37,26 @@ canvas {
     left: 10px;
     right: 10px;
     display: flex;
-    justify-content: space-between; /* Ajusta la distribución de los elementos */
+    justify-content: space-between;
     color: #fff;
     font-size: 1.2em;
     text-shadow: 1px 1px 2px black;
     pointer-events: none; /* Para que no interfiera con clics en el canvas */
+    z-index: 10; /* Por encima del canvas */
 }
 
 #score {
     text-align: left;
 }
 
+#lives { /* Aseguramos que vidas se muestre correctamente */
+     text-align: center;
+     flex-grow: 1; /* Permite que vidas ocupe espacio en el centro */
+}
+
 #level {
     text-align: right;
 }
-
-/* Opcional: Estilo específico para las vidas si lo necesitas */
-/* #lives {
-    text-align: center;
-    margin: 0 auto;
-} */
-
 
 #startButton {
     position: absolute;
@@ -67,7 +71,7 @@ canvas {
     border: 2px solid #0f0;
     border-radius: 5px;
     box-shadow: 0 0 8px #0f0;
-    z-index: 10; /* Encima del canvas */
+    z-index: 15; /* Encima del canvas y UI */
 }
 
 #startButton:hover {
@@ -90,4 +94,94 @@ canvas {
 /* Ocultar controles de audio por defecto */
 audio {
     display: none;
+}
+
+/* --- ESTILOS CONTROLES MÓVILES --- */
+#mobile-controls {
+    position: fixed; /* Fijo en la ventana del navegador */
+    bottom: 20px; /* Distancia desde abajo */
+    left: 20px; /* Distancia desde la izquierda */
+    right: 20px; /* Distancia desde la derecha (ayuda a distribuir) */
+    z-index: 20; /* Asegura que estén por encima de todo */
+    display: flex; /* Para posicionar cruceta y botón */
+    justify-content: space-between; /* Pone la cruceta a un lado, el botón al otro */
+    pointer-events: none; /* Por defecto no interactivo */
+}
+
+#mobile-controls.active { /* Clase para activar la interactividad */
+    pointer-events: all;
+}
+
+
+#dpad {
+    width: 150px; /* Tamaño de la cruceta */
+    height: 150px; /* Tamaño de la cruceta */
+    background-image: url('cruz.png');
+    background-size: contain; /* Ajusta la imagen al tamaño del div */
+    background-repeat: no-repeat;
+    background-position: center;
+    position: relative; /* Para posicionar las áreas táctiles dentro */
+    /* Importante para evitar el scroll/zoom táctil */
+    touch-action: none;
+    -ms-touch-action: none;
+}
+
+#dpad > div { /* Estilo base para las áreas táctiles de la cruceta */
+    position: absolute;
+    /* Fondo transparente por defecto, puedes añadir un color semi-transparente al ser tocado si quieres */
+    /* background-color: rgba(255, 255, 255, 0.1); */
+}
+
+/* Posicionamiento y tamaño de las áreas táctiles (ajustar según tu cruz.png) */
+/* Estos son valores de ejemplo. Deberás medirlos en tu imagen. */
+#dpad-up {
+    top: 0;
+    left: 50px; /* Asumiendo que la flecha arriba está centrada horizontalmente */
+    width: 50px;
+    height: 50px;
+}
+#dpad-left {
+    top: 50px; /* Asumiendo que las flechas izquierda/derecha están centradas verticalmente */
+    left: 0;
+    width: 50px;
+    height: 50px;
+}
+#dpad-right {
+     top: 50px; /* Asumiendo que las flechas izquierda/derecha están centradas verticalmente */
+     right: 0;
+     width: 50px;
+     height: 50px;
+}
+
+#shootButtonMobile {
+    width: 80px; /* Tamaño del botón de disparo */
+    height: 80px; /* Tamaño del botón de disparo */
+    background-image: url('boton.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    /* Importante para evitar el scroll/zoom táctil */
+    touch-action: none;
+    -ms-touch-action: none;
+    /* Puedes añadir un estado :active para feedback visual al tocar */
+    /* :active { transform: scale(0.95); } */
+}
+
+
+/* Media Query para mostrar controles móviles solo en pantallas pequeñas */
+/* y ocultar las instrucciones de teclado */
+@media (max-width: 768px) { /* Consideramos 768px como el límite para 'móvil' */
+    #mobile-controls {
+        display: flex; /* Mostrar los controles móviles */
+    }
+    #instructions {
+        display: none !important; /* Ocultar las instrucciones de teclado */
+    }
+}
+
+/* Por defecto, ocultar los controles móviles en pantallas grandes */
+@media (min-width: 769px) {
+     #mobile-controls {
+         display: none;
+     }
 }
