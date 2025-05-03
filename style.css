@@ -6,41 +6,24 @@ body {
     flex-direction: column;
     align-items: center;
     margin: 0;
-    padding-top: 10px; /* Reducido un poco */
+    padding-top: 20px;
     overflow: hidden; /* Evita barras de scroll */
-    /* Evitar selección de texto en móviles */
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-    /* Mejorar renderizado en algunos móviles */
-    -webkit-tap-highlight-color: transparent;
 }
 
 h1 {
     color: #0f0; /* Color verde neón */
     text-shadow: 0 0 5px #0f0;
-    margin-bottom: 10px; /* Espacio reducido */
 }
 
 #game-container {
     position: relative; /* Para posicionar UI y botón */
     border: 2px solid #0f0; /* Borde neón */
     box-shadow: 0 0 10px #0f0;
-    /* Ajustar el ancho máximo para que quepa en pantallas más pequeñas */
-    width: 95%;
-    max-width: 800px; /* Mantenemos el máximo del canvas original */
-    /* Centrar el contenedor */
-    margin-left: auto;
-    margin-right: auto;
 }
 
 canvas {
     display: block; /* Elimina espacio extra debajo del canvas */
     background-color: #000; /* Fondo negro si la imagen tarda en cargar */
-    /* Hacer el canvas responsive */
-    width: 100%;
-    height: auto; /* Mantiene la proporción original (ajustar en JS si es necesario) */
 }
 
 #ui {
@@ -51,15 +34,17 @@ canvas {
     display: flex;
     justify-content: space-between; /* Ajusta la distribución de los elementos */
     color: #fff;
-    font-size: 1em; /* Ajustar tamaño para móviles */
+    font-size: 1.2em;
     text-shadow: 1px 1px 2px black;
     pointer-events: none; /* Para que no interfiera con clics en el canvas */
 }
 
-#score, #lives, #level {
-    background-color: rgba(0,0,0,0.5); /* Fondo semitransparente */
-    padding: 3px 8px;
-    border-radius: 4px;
+#score {
+    text-align: left;
+}
+
+#level {
+    text-align: right;
 }
 
 #startButton {
@@ -84,93 +69,45 @@ canvas {
 
 #instructions {
     position: absolute;
-    bottom: 5px; /* Ajustar posición */
+    bottom: 10px;
     left: 50%;
     transform: translateX(-50%);
-    color: #bbb;
-    font-size: 0.8em;
+    color: #ccc;
+    font-size: 0.9em;
     text-align: center;
     width: 90%;
     pointer-events: none; /* No interfiere con clics */
     z-index: 5;
-    background-color: rgba(0,0,0,0.4); /* Fondo leve */
-    padding: 2px;
-    border-radius: 3px;
 }
 
-/* --- NUEVO: Estilos para Controles Móviles --- */
+audio {
+    display: none;
+}
+
+/* Controles móviles */
 #mobile-controls {
-    display: none; /* Ocultos por defecto */
     position: absolute;
-    bottom: 10px;
-    left: 10px;
-    right: 10px;
-    /* height: 80px; */ /* Altura opcional */
-    z-index: 15; /* Encima de todo excepto quizás el botón Start */
-    justify-content: space-between;
-    align-items: center; /* Centra botones verticalmente si tienen alturas diferentes */
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 15px;
+    z-index: 10;
 }
 
 #mobile-controls button {
-    background-color: rgba(0, 200, 0, 0.5); /* Verde semitransparente */
+    background-color: #222;
+    color: #0f0;
     border: 2px solid #0f0;
-    color: white;
-    font-size: 1.8em; /* Tamaño grande para dedos */
-    font-weight: bold;
-    border-radius: 50%; /* Círculos */
-    width: 60px;  /* Tamaño fijo */
-    height: 60px; /* Tamaño fijo */
+    border-radius: 50%;
+    padding: 20px;
+    font-size: 1.5em;
+    box-shadow: 0 0 5px #0f0;
     cursor: pointer;
-    /* Evitar resaltado azul en Chrome móvil al tocar */
-    -webkit-tap-highlight-color: transparent;
-    /* Separación entre botones (si es necesario ajustar) */
-    /* margin: 0 5px; */
-    display: flex; /* Para centrar el icono/texto dentro */
-    justify-content: center;
-    align-items: center;
-    padding: 0; /* Resetear padding */
 }
 
-/* Estilo para el botón de disparo un poco diferente */
-#btn-shoot {
-    background-color: rgba(200, 0, 0, 0.5); /* Rojo semitransparente */
-    border-color: #f55;
-    /* Posicionarlo a la derecha */
-    /* (ya se posiciona con space-between en el contenedor) */
-}
-
-/* Efecto visual al presionar */
-#mobile-controls button:active {
-    background-color: rgba(255, 255, 255, 0.5); /* Blanco semitransparente */
-}
-
-/* Media Query para mostrar controles móviles en pantallas pequeñas */
-/* Y potencialmente ocultar instrucciones de teclado */
-@media (max-width: 850px) { /* Ajusta este valor según necesites */
+@media (min-width: 801px) {
     #mobile-controls {
-        display: flex; /* Mostrar los controles */
+        display: none;
     }
-    /* Opcional: Ocultar instrucciones de PC en móviles */
-    /* #instructions { display: none; } */
-    /* Opcional: Mover instrucciones más arriba si chocan con botones */
-    #instructions {
-       bottom: 85px; /* Ajustar si es necesario */
-    }
-     /* Ajustar tamaño de fuente de UI en móviles */
-    #ui {
-        font-size: 0.9em;
-        top: 5px;
-        left: 5px;
-        right: 5px;
-    }
-    h1 {
-        font-size: 1.5em;
-    }
-}
-/* --- FIN NUEVO --- */
-
-
-/* Ocultar controles de audio por defecto */
-audio {
-    display: none;
 }

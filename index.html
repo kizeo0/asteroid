@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Asteroides Infinito</title>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -17,16 +17,17 @@
         </div>
         <button id="startButton">Iniciar Juego</button>
         <div id="instructions">
-            <b>PC:</b> Flechas ← → (Girar), ↑ (Acelerar), Espacio (Disparar).<br>
-            <b>Móvil:</b> Usa los botones en pantalla.
+            Usa las flechas ← → para girar, ↑ para acelerar, y [Espacio] para disparar.
         </div>
 
+        <!-- Controles móviles -->
         <div id="mobile-controls">
-            <button id="btn-left">◀</button>
-            <button id="btn-thrust">▲</button>
-            <button id="btn-right">▶</button>
-            <button id="btn-shoot">🚀</button> </div>
+            <button id="leftBtn">←</button>
+            <button id="rightBtn">→</button>
+            <button id="upBtn">↑</button>
+            <button id="fireBtn">⦿</button>
         </div>
+    </div>
 
     <audio id="bgMusic" src="music.mp3" preload="auto" loop></audio>
     <audio id="shotSound" src="shot.mp3" preload="auto"></audio>
