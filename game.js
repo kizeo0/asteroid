@@ -39,8 +39,8 @@ const killSound = document.getElementById('killSound');
 const newStageSound = document.getElementById('newStageSound');
 
 // --- Configuración del Juego ---
-const PLAYER_SIZE = 90; // Más pequeño para adaptarse mejor a pantalla móvil
-const ENEMY_SIZE = 70;  // Más pequeño
+const PLAYER_SIZE = 120; // Más pequeño para adaptarse mejor a pantalla móvil
+const ENEMY_SIZE = 100;  // Más pequeño
 const POWERUP_SIZE = 50; // Más pequeño
 const LASER_SPEED = 6; // Ligeramente más lento
 const PLAYER_TURN_SPEED = 0.09; // Un poco más rápido para compensar controles táctiles
