@@ -1,37 +1,44 @@
+/* Estilos generales y del juego */
 body {
     background-color: #111;
     color: #eee;
     font-family: 'Arial', sans-serif;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    display: flex; /* Centra el wrapper */
+    justify-content: center;
+    align-items: flex-start; /* Alinea arriba */
     margin: 0;
-    padding-top: 20px;
-    overflow: hidden; /* Evita barras de scroll */
+    padding: 10px 0; /* Espacio arriba/abajo */
+    height: 100vh; /* Ocupa toda la altura */
+    overflow: hidden; /* Evita barras de scroll generales */
+    -webkit-user-select: none; /* Safari */
+    -ms-user-select: none; /* IE 10+/Edge */
+    user-select: none; /* Standard */
+    -webkit-tap-highlight-color: transparent; /* Quita highlight azul en tap */
 }
 
-h1 {
-    color: #0f0; /* Color verde neón */
-    text-shadow: 0 0 5px #0f0;
+/* Contenedor principal para juego y controles */
+#game-wrapper {
+    display: flex;
+    flex-direction: column; /* Apila juego y controles */
+    align-items: center;
+    width: 100%;
+    max-width: 400px; /* Máximo ancho igual al canvas */
 }
 
 #game-container {
-    position: relative; /* Para posicionar UI y botón */
-    border: 2px solid #0f0; /* Borde neón */
+    position: relative; /* Para UI y botón Start */
+    width: 400px; /* Ancho fijo */
+    height: 600px; /* Alto fijo */
+    border: 2px solid #0f0;
     box-shadow: 0 0 10px #0f0;
-    /* Asegúrate de que el contenedor tenga un tamaño que funcione para el juego */
-    width: 800px; /* Ancho del canvas */
-    height: 600px; /* Alto del canvas */
-    max-width: 100%; /* Adaptable a pantallas más pequeñas */
-    max-height: 100vh; /* Adapta al alto de la ventana */
-    overflow: hidden; /* Esconde cualquier cosa que se salga del contenedor */
+    margin-bottom: 10px; /* Espacio antes de los controles */
 }
 
 canvas {
-    display: block; /* Elimina espacio extra debajo del canvas */
-    background-color: #000; /* Fondo negro si la imagen tarda en cargar */
-    width: 100%; /* Asegura que el canvas ocupe el 100% del contenedor */
-    height: 100%; /* Asegura que el canvas ocupe el 100% del contenedor */
+    display: block;
+    background-color: #000;
+    width: 100%; /* Ocupa el contenedor */
+    height: 100%; /* Ocupa el contenedor */
 }
 
 #ui {
@@ -40,27 +47,19 @@ canvas {
     left: 10px;
     right: 10px;
     display: flex;
-    justify-content: space-between; /* Ajusta la distribución de los elementos */
+    justify-content: space-between;
     color: #fff;
-    font-size: 1.2em;
+    font-size: 1em; /* Ajustado para pantalla más pequeña */
     text-shadow: 1px 1px 2px black;
-    pointer-events: none; /* Para que no interfiera con clics en el canvas */
-    z-index: 5; /* Asegura que la UI esté encima del canvas */
+    pointer-events: none;
 }
 
-#score {
-    text-align: left;
+#score, #lives, #level {
+     flex: 1; /* Ocupan espacio equitativo */
+     text-align: center;
 }
-
-#level {
-    text-align: right;
-}
-
-/* Opcional: Estilo específico para las vidas si lo necesitas */
-/* #lives {
-    text-align: center;
-    margin: 0 auto;
-} */
+#score { text-align: left; }
+#level { text-align: right; }
 
 
 #startButton {
@@ -76,123 +75,64 @@ canvas {
     border: 2px solid #0f0;
     border-radius: 5px;
     box-shadow: 0 0 8px #0f0;
-    z-index: 10; /* Encima del canvas y otros elementos */
+    z-index: 10;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 #startButton:hover {
     background-color: #0c0;
 }
 
-#instructions {
-    position: absolute;
-    bottom: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    color: #ccc;
-    font-size: 0.9em;
-    text-align: center;
-    width: 90%;
-    pointer-events: none; /* No interfiere con clics */
-    z-index: 5;
+/* Contenedor de controles táctiles */
+#touch-controls {
+    display: flex;
+    flex-direction: column; /* Filas de controles */
+    width: 100%; /* Ocupa el ancho del wrapper */
+    max-width: 400px;
+    padding: 10px 0;
+    background-color: #222; /* Fondo oscuro para separar */
+    border-radius: 5px;
 }
 
-/* Ocultar controles de audio por defecto */
+.control-row {
+    display: flex;
+    justify-content: space-around; /* Espacio entre botones de la fila */
+    margin-bottom: 10px; /* Espacio entre filas */
+}
+.control-row:last-child {
+    margin-bottom: 0;
+}
+
+#touch-controls button {
+    flex-grow: 1; /* Botones ocupan espacio disponible */
+    margin: 0 5px; /* Pequeño margen entre botones */
+    padding: 15px 10px; /* Más alto que ancho para tap fácil */
+    font-size: 1.2em; /* Tamaño de texto/icono */
+    background-color: #444;
+    color: white;
+    border: 1px solid #666;
+    border-radius: 5px;
+    cursor: pointer;
+    touch-action: manipulation; /* Mejora respuesta táctil */
+    -webkit-user-select: none; /* Evita selección */
+    user-select: none;
+    -webkit-tap-highlight-color: rgba(255, 255, 255, 0.3); /* Feedback visual */
+}
+
+/* Estilo para cuando se presiona un botón */
+#touch-controls button:active {
+    background-color: #666;
+    transform: scale(0.95); /* Efecto de presión */
+}
+
+
+/* Ocultar controles de audio */
 audio {
     display: none;
 }
 
-/* --- Estilos para Controles Móviles --- */
-#mobile-controls {
-    position: absolute; /* O fixed si quieres que floten por encima de todo */
-    bottom: 20px; /* Ajusta la distancia desde abajo */
-    left: 0;
-    right: 0;
-    display: flex;
-    justify-content: space-between; /* Separa el D-pad del botón de disparo */
-    padding: 0 20px; /* Espacio a los lados */
-    z-index: 10; /* Asegura que los controles estén encima de todo */
-    pointer-events: none; /* Inicialmente no interactivos hasta que el juego comience */
-}
-
-#mobile-controls.active {
-    pointer-events: auto; /* Se vuelven interactivos cuando el juego está activo */
-}
-
-.dpad {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-.left-right {
-    display: flex;
-    justify-content: center;
-    margin: 5px 0; /* Espacio entre arriba/abajo y centro */
-}
-
-.control-button {
-    width: 60px; /* Tamaño de los botones */
-    height: 60px;
-    margin: 5px; /* Espacio entre botones */
-    font-size: 1.5em;
-    font-weight: bold;
-    color: white;
-    background-color: rgba(50, 50, 50, 0.7); /* Fondo semitransparente */
-    border: 2px solid #0f0;
-    border-radius: 10px; /* Bordes redondeados */
-    box-shadow: 0 0 5px #0f0;
-    cursor: pointer;
-    user-select: none; /* Evita que se seleccione el texto al tocar */
-    -webkit-tap-highlight-color: transparent; /* Evita el resaltado al tocar en iOS */
-}
-
-.control-button:active {
-    background-color: rgba(100, 100, 100, 0.9); /* Cambio de color al presionar */
-    box-shadow: 0 0 10px #0f0, 0 0 15px #0f0;
-}
-
-#fire-button {
-    width: 100px; /* Botón de disparo más grande */
-    height: 100px;
-    border-radius: 50%; /* Botón circular */
-    background-color: rgba(255, 0, 0, 0.7); /* Rojo semitransparente */
-    border-color: #f00;
-    box-shadow: 0 0 5px #f00;
-    display: flex; /* Centrar texto */
-    justify-content: center;
-    align-items: center;
-    font-size: 1.2em;
-}
-
-#fire-button:active {
-     background-color: rgba(255, 50, 50, 0.9);
-     box-shadow: 0 0 10px #f00, 0 0 15px #f00;
-}
-
-/* Ocultar controles móviles en pantallas grandes */
-@media (min-width: 768px) {
-    #mobile-controls {
-        display: none;
-    }
-    #instructions {
-        display: block !important; /* Asegura que las instrucciones se muestren en desktop */
-    }
-}
-
-/* Mostrar controles móviles en pantallas pequeñas */
-@media (max-width: 767px) {
-    #instructions {
-        display: none; /* Oculta las instrucciones de teclado en móvil */
-    }
-     #game-container {
-        /* Ajustar el tamaño del contenedor para mobile si es necesario */
-        width: 100%;
-        height: calc(100vh - 80px); /* Ejemplo: 100% del alto menos espacio para título y controles */
-        margin-top: 10px;
-    }
-     canvas {
-         /* Asegurarse de que el canvas se ajuste al contenedor en mobile */
-         width: 100%;
-         height: 100%;
-     }
+/* Ocultar instrucciones de teclado (opcional) */
+#instructions {
+   display: none !important; /* Ocultar el div de instrucciones original */
 }

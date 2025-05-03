@@ -2,38 +2,34 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Asteroides Infinito</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Asteroides Móvil</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>Asteroides Infinito</h1>
-    <div id="game-container">
-        <canvas id="gameCanvas" width="800" height="600"></canvas>
-        <div id="ui">
-            <div id="score">Puntaje: 0</div>
-            <div id="lives">Vidas: 3</div> <div id="level">Nivel: 1</div>
-        </div>
-        <button id="startButton">Iniciar Juego</button>
-        <div id="instructions">
-            Usa las flechas ← → para girar, ↑ para acelerar, y [Espacio] para disparar.
-        </div>
-
-        <div id="mobile-controls">
-            <div class="dpad">
-                <button id="up-button" class="control-button">↑</button>
-                <div class="left-right">
-                    <button id="left-button" class="control-button">←</button>
-                    <button id="right-button" class="control-button">→</button>
-                </div>
-                <button id="down-button" class="control-button">↓</button>
+    <div id="game-wrapper"> <div id="game-container">
+            <canvas id="gameCanvas" width="400" height="600"></canvas>
+            <div id="ui">
+                <div id="score">Puntaje: 0</div>
+                <div id="lives">Vidas: 3</div>
+                <div id="level">Nivel: 1</div>
             </div>
-            <button id="fire-button" class="control-button">Disparar</button>
+            <button id="startButton">Iniciar Juego</button>
+            <div id="instructions" style="display: none;">
+                </div>
         </div>
 
-    </div>
-
-    <audio id="bgMusic" src="music.mp3" preload="auto" loop></audio>
+        <div id="touch-controls">
+            <div class="control-row">
+                <button id="btnLeft">⬅️ Girar Izq.</button>
+                <button id="btnRight">Girar Der. ➡️</button>
+            </div>
+            <div class="control-row">
+                <button id="btnThrust">⬆️ Acelerar</button>
+                <button id="btnShoot">💥 Disparar</button>
+            </div>
+        </div>
+    </div> <audio id="bgMusic" src="music.mp3" preload="auto" loop></audio>
     <audio id="shotSound" src="shot.mp3" preload="auto"></audio>
     <audio id="killSound" src="kill.mp3" preload="auto"></audio>
     <audio id="newStageSound" src="newstage.mp3" preload="auto"></audio>
