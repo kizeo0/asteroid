@@ -1,93 +1,147 @@
-body {
-    background-color: #111;
-    color: #eee;
-    font-family: 'Arial', sans-serif;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+/* Reset básico y configuración de pantalla completa */
+html, body {
     margin: 0;
-    padding-top: 20px;
-    overflow: hidden; /* Evita barras de scroll */
+    padding: 0;
+    height: 100%;
+    width: 100%;
+    overflow: hidden; /* Previene scroll */
+    font-family: 'Arial', sans-serif;
+    background-color: #000; /* Fondo negro general */
+    color: #eee;
+    /* Deshabilitar selección de texto y tap-highlight */
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
 }
 
-h1 {
-    color: #0f0; /* Color verde neón */
-    text-shadow: 0 0 5px #0f0;
+/* Contenedor principal flexible que ocupa toda la pantalla */
+#game-wrapper {
+    display: flex;
+    flex-direction: column; /* Apila juego arriba, controles abajo */
+    height: 100%;
+    width: 100%;
 }
 
+/* Contenedor del juego que ocupa el espacio restante */
 #game-container {
-    position: relative; /* Para posicionar UI y botón */
-    border: 2px solid #0f0; /* Borde neón */
-    box-shadow: 0 0 10px #0f0;
+    flex-grow: 1; /* Crece para llenar el espacio vertical */
+    position: relative; /* Necesario para posicionar UI y botón Start */
+    overflow: hidden; /* Asegura que el canvas no se desborde */
+    background-color: #000; /* Fondo mientras carga la imagen */
+    display: flex; /* Para centrar el canvas si tuviera márgenes */
+    justify-content: center;
+    align-items: center;
 }
 
+/* Canvas ocupa todo su contenedor */
 canvas {
-    display: block; /* Elimina espacio extra debajo del canvas */
-    background-color: #000; /* Fondo negro si la imagen tarda en cargar */
+    display: block;
+    width: 100%;
+    height: 100%;
+    /* background-color: #111; Opcional si la imagen de fondo tarda */
 }
 
+/* UI superpuesta (sin cambios grandes, ajustar fuente si es necesario) */
 #ui {
     position: absolute;
-    top: 10px;
+    top: 5px; /* Más pegado al borde */
     left: 10px;
     right: 10px;
     display: flex;
-    justify-content: space-between; /* Ajusta la distribución de los elementos */
+    justify-content: space-between;
     color: #fff;
-    font-size: 1.2em;
-    text-shadow: 1px 1px 2px black;
-    pointer-events: none; /* Para que no interfiera con clics en el canvas */
+    font-size: clamp(14px, 3vw, 18px); /* Tamaño de fuente adaptable */
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
+    pointer-events: none;
+    z-index: 5; /* Encima del canvas */
 }
-
-#score {
-    text-align: left;
-}
-
-#level {
-    text-align: right;
-}
-
-/* Opcional: Estilo específico para las vidas si lo necesitas */
-/* #lives {
-    text-align: center;
-    margin: 0 auto;
-} */
+#score, #lives, #level { flex: 1; text-align: center; }
+#score { text-align: left; }
+#level { text-align: right; }
 
 
+/* Botón de inicio (sin cambios grandes) */
 #startButton {
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
     padding: 15px 30px;
-    font-size: 1.5em;
+    font-size: clamp(18px, 5vw, 24px); /* Tamaño adaptable */
     cursor: pointer;
     background-color: #0a0;
     color: white;
     border: 2px solid #0f0;
-    border-radius: 5px;
-    box-shadow: 0 0 8px #0f0;
-    z-index: 10; /* Encima del canvas */
+    border-radius: 8px; /* Más redondeado */
+    box-shadow: 0 0 8px #0f0, inset 0 0 5px rgba(255, 255, 255, 0.3); /* Efecto ligero */
+    z-index: 10; /* Encima de todo */
+    white-space: nowrap; /* Evita que el texto se parta */
 }
-
-#startButton:hover {
+#startButton:active {
     background-color: #0c0;
+    transform: translate(-50%, -50%) scale(0.95); /* Feedback */
 }
 
-#instructions {
-    position: absolute;
-    bottom: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    color: #ccc;
-    font-size: 0.9em;
-    text-align: center;
-    width: 90%;
-    pointer-events: none; /* No interfiere con clics */
-    z-index: 5;
+
+/* Contenedor de controles fijo abajo */
+#touch-controls {
+    flex-shrink: 0; /* No se encoge */
+    width: 100%;
+    background-color: rgba(20, 20, 20, 0.9); /* Fondo semitransparente oscuro */
+    padding: 10px 5px; /* Padding vertical y horizontal reducido */
+    box-sizing: border-box; /* Padding incluido en el width */
+    display: flex;
+    justify-content: space-between; /* Separa grupo izq y der */
+    align-items: center; /* Centra verticalmente los grupos */
+    z-index: 10; /* Asegura que esté visible */
+    border-top: 1px solid #444; /* Línea divisoria opcional */
 }
 
-/* Ocultar controles de audio por defecto */
+/* Grupos de controles (movimiento y acción) */
+.control-group {
+    display: flex;
+    align-items: center;
+}
+
+.control-group.movement {
+    justify-content: flex-start; /* Alinea botones a la izquierda */
+}
+
+.control-group.action {
+    justify-content: flex-end; /* Alinea botones a la derecha */
+}
+
+/* Estilo mejorado de los botones táctiles */
+#touch-controls button {
+    background-color: rgba(80, 80, 80, 0.7); /* Fondo más transparente */
+    border: 1px solid rgba(150, 150, 150, 0.5);
+    color: #eee;
+    border-radius: 50%; /* Botones redondos */
+    width: clamp(55px, 15vw, 70px);  /* Tamaño adaptable responsivo */
+    height: clamp(55px, 15vw, 70px); /* Igual al ancho para ser círculo */
+    margin: 0 5px; /* Espacio entre botones */
+    font-size: clamp(20px, 6vw, 28px); /* Tamaño de icono/emoji adaptable */
+    cursor: pointer;
+    touch-action: manipulation; /* Mejora respuesta táctil */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    line-height: 1; /* Asegura centrado vertical del texto/icono */
+    transition: background-color 0.1s ease, transform 0.1s ease; /* Transición suave */
+}
+
+/* Feedback visual al presionar */
+#touch-controls button:active {
+    background-color: rgba(120, 120, 120, 0.9); /* Más opaco al presionar */
+    border-color: rgba(200, 200, 200, 0.8);
+    transform: scale(0.92); /* Efecto de presión más notable */
+}
+
+/* Ajuste específico para el botón de acelerar (puede ser diferente) */
+/* #btnThrust { border-radius: 8px; } */
+
+/* Ocultar audio */
 audio {
     display: none;
 }
