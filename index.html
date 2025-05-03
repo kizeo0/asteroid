@@ -2,35 +2,33 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>Asteroides Móvil Fullscreen</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Asteroides Infinito</title>
     <link rel="stylesheet" href="style.css">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
 </head>
 <body>
-    <div id="game-wrapper">
-        <div id="game-container">
-            <canvas id="gameCanvas">Tu navegador no soporta Canvas.</canvas>
-            <div id="ui">
-                <div id="score">Puntaje: 0</div>
-                <div id="lives">Vidas: 3</div>
-                <div id="level">Nivel: 1</div>
-            </div>
-            <button id="startButton">Iniciar Juego</button>
+    <h1>Asteroides Infinito</h1>
+    <div id="game-container">
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div id="ui">
+            <div id="score">Puntaje: 0</div>
+            <div id="lives">Vidas: 3</div>
+            <div id="level">Nivel: 1</div>
+        </div>
+        <button id="startButton">Iniciar Juego</button>
+        <div id="instructions">
+            <b>PC:</b> Flechas ← → (Girar), ↑ (Acelerar), Espacio (Disparar).<br>
+            <b>Móvil:</b> Usa los botones en pantalla.
         </div>
 
-        <div id="touch-controls">
-            <div class="control-group movement">
-                <button id="btnLeft" aria-label="Girar Izquierda">⬅️</button>
-                <button id="btnThrust" aria-label="Acelerar">⬆️</button>
-                <button id="btnRight" aria-label="Girar Derecha">➡️</button>
-            </div>
-            <div class="control-group action">
-                <button id="btnShoot" aria-label="Disparar">💥</button>
-            </div>
+        <div id="mobile-controls">
+            <button id="btn-left">◀</button>
+            <button id="btn-thrust">▲</button>
+            <button id="btn-right">▶</button>
+            <button id="btn-shoot">🚀</button> </div>
         </div>
-    </div> <audio id="bgMusic" src="music.mp3" preload="auto" loop></audio>
+
+    <audio id="bgMusic" src="music.mp3" preload="auto" loop></audio>
     <audio id="shotSound" src="shot.mp3" preload="auto"></audio>
     <audio id="killSound" src="kill.mp3" preload="auto"></audio>
     <audio id="newStageSound" src="newstage.mp3" preload="auto"></audio>
