@@ -1,44 +1,29 @@
-/* Estilos generales y del juego */
 body {
     background-color: #111;
     color: #eee;
     font-family: 'Arial', sans-serif;
-    display: flex; /* Centra el wrapper */
-    justify-content: center;
-    align-items: flex-start; /* Alinea arriba */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     margin: 0;
-    padding: 10px 0; /* Espacio arriba/abajo */
-    height: 100vh; /* Ocupa toda la altura */
-    overflow: hidden; /* Evita barras de scroll generales */
-    -webkit-user-select: none; /* Safari */
-    -ms-user-select: none; /* IE 10+/Edge */
-    user-select: none; /* Standard */
-    -webkit-tap-highlight-color: transparent; /* Quita highlight azul en tap */
+    padding-top: 20px;
+    overflow: hidden; /* Evita barras de scroll */
 }
 
-/* Contenedor principal para juego y controles */
-#game-wrapper {
-    display: flex;
-    flex-direction: column; /* Apila juego y controles */
-    align-items: center;
-    width: 100%;
-    max-width: 400px; /* Máximo ancho igual al canvas */
+h1 {
+    color: #0f0; /* Color verde neón */
+    text-shadow: 0 0 5px #0f0;
 }
 
 #game-container {
-    position: relative; /* Para UI y botón Start */
-    width: 400px; /* Ancho fijo */
-    height: 600px; /* Alto fijo */
-    border: 2px solid #0f0;
+    position: relative; /* Para posicionar UI y botón */
+    border: 2px solid #0f0; /* Borde neón */
     box-shadow: 0 0 10px #0f0;
-    margin-bottom: 10px; /* Espacio antes de los controles */
 }
 
 canvas {
-    display: block;
-    background-color: #000;
-    width: 100%; /* Ocupa el contenedor */
-    height: 100%; /* Ocupa el contenedor */
+    display: block; /* Elimina espacio extra debajo del canvas */
+    background-color: #000; /* Fondo negro si la imagen tarda en cargar */
 }
 
 #ui {
@@ -47,19 +32,26 @@ canvas {
     left: 10px;
     right: 10px;
     display: flex;
-    justify-content: space-between;
+    justify-content: space-between; /* Ajusta la distribución de los elementos */
     color: #fff;
-    font-size: 1em; /* Ajustado para pantalla más pequeña */
+    font-size: 1.2em;
     text-shadow: 1px 1px 2px black;
-    pointer-events: none;
+    pointer-events: none; /* Para que no interfiera con clics en el canvas */
 }
 
-#score, #lives, #level {
-     flex: 1; /* Ocupan espacio equitativo */
-     text-align: center;
+#score {
+    text-align: left;
 }
-#score { text-align: left; }
-#level { text-align: right; }
+
+#level {
+    text-align: right;
+}
+
+/* Opcional: Estilo específico para las vidas si lo necesitas */
+/* #lives {
+    text-align: center;
+    margin: 0 auto;
+} */
 
 
 #startButton {
@@ -75,64 +67,27 @@ canvas {
     border: 2px solid #0f0;
     border-radius: 5px;
     box-shadow: 0 0 8px #0f0;
-    z-index: 10;
-    -webkit-user-select: none;
-    user-select: none;
+    z-index: 10; /* Encima del canvas */
 }
 
 #startButton:hover {
     background-color: #0c0;
 }
 
-/* Contenedor de controles táctiles */
-#touch-controls {
-    display: flex;
-    flex-direction: column; /* Filas de controles */
-    width: 100%; /* Ocupa el ancho del wrapper */
-    max-width: 400px;
-    padding: 10px 0;
-    background-color: #222; /* Fondo oscuro para separar */
-    border-radius: 5px;
+#instructions {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #ccc;
+    font-size: 0.9em;
+    text-align: center;
+    width: 90%;
+    pointer-events: none; /* No interfiere con clics */
+    z-index: 5;
 }
 
-.control-row {
-    display: flex;
-    justify-content: space-around; /* Espacio entre botones de la fila */
-    margin-bottom: 10px; /* Espacio entre filas */
-}
-.control-row:last-child {
-    margin-bottom: 0;
-}
-
-#touch-controls button {
-    flex-grow: 1; /* Botones ocupan espacio disponible */
-    margin: 0 5px; /* Pequeño margen entre botones */
-    padding: 15px 10px; /* Más alto que ancho para tap fácil */
-    font-size: 1.2em; /* Tamaño de texto/icono */
-    background-color: #444;
-    color: white;
-    border: 1px solid #666;
-    border-radius: 5px;
-    cursor: pointer;
-    touch-action: manipulation; /* Mejora respuesta táctil */
-    -webkit-user-select: none; /* Evita selección */
-    user-select: none;
-    -webkit-tap-highlight-color: rgba(255, 255, 255, 0.3); /* Feedback visual */
-}
-
-/* Estilo para cuando se presiona un botón */
-#touch-controls button:active {
-    background-color: #666;
-    transform: scale(0.95); /* Efecto de presión */
-}
-
-
-/* Ocultar controles de audio */
+/* Ocultar controles de audio por defecto */
 audio {
     display: none;
-}
-
-/* Ocultar instrucciones de teclado (opcional) */
-#instructions {
-   display: none !important; /* Ocultar el div de instrucciones original */
 }
