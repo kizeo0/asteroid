@@ -631,3 +631,22 @@ if (leftBtn && rightBtn && upBtn && fireBtn) {
         downBtn.addEventListener('touchend', () => simulateKey(40, 'keyup'));
     }
 }
+
+
+// ✅ Control táctil funcional sin KeyboardEvent
+const touchControl = (btn, key, flag) => {
+    if (!btn) return;
+    btn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        window[flag] = true;
+    });
+    btn.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        window[flag] = false;
+    });
+};
+
+touchControl(document.getElementById('leftBtn'), 37, 'leftPressed');
+touchControl(document.getElementById('rightBtn'), 39, 'rightPressed');
+touchControl(document.getElementById('upBtn'), 38, 'upPressed');
+touchControl(document.getElementById('fireBtn'), 32, 'spacePressed');
