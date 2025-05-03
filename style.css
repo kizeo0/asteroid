@@ -113,7 +113,8 @@ canvas {
 
 /* --- Controles Táctiles --- */
 #touch-controls {
-    display: flex;
+    /* Show controls by default and hide with media query for desktop */
+    display: flex; /* Changed from 'none' to 'flex' */
     justify-content: space-around; /* Espacia D-pad y botón de disparo */
     align-items: center; /* Centra verticalmente los botones */
     width: 100%;
@@ -132,10 +133,9 @@ canvas {
     display: grid;
     grid-template-areas:
         ". up ."
-        "left . right"
-        ". down .";
-    grid-template-columns: 60px 60px 60px; /* Tamaño de columnas */
-    grid-template-rows: 60px 60px 60px; /* Tamaño de filas */
+        "left . right"; /* Removed down area */
+    grid-template-columns: 60px 60px 60px; /* Size of columns */
+    grid-template-rows: 60px 60px; /* Reduced rows to 2 */
     gap: 5px; /* Espacio entre botones */
 }
 
@@ -160,7 +160,7 @@ canvas {
 
 /* Asignar botones a áreas del grid */
 #dpad-up { grid-area: up; }
-#dpad-down { grid-area: down; }
+/* Removed #dpad-down rule */
 #dpad-left { grid-area: left; }
 #dpad-right { grid-area: right; }
 
@@ -179,23 +179,51 @@ canvas {
 }
 
 #shoot-button:active {
-    background-color: rgba(255, 51, 51, 0.8); /* Rojo más brillante */
+     background-color: rgba(255, 51, 51, 0.8);
 }
-
 
 /* Ocultar controles de audio por defecto */
 audio {
     display: none;
 }
 
-/* Media Query para ajustar un poco en pantallas muy pequeñas si es necesario */
+/* Media Query para Ocultar controles táctiles en pantallas grandes (Desktop) */
+/* We use a min-width to hide touch controls on larger screens */
+@media (min-width: 768px) {
+    #touch-controls {
+        display: none; /* Hide touch controls on desktop */
+    }
+    #instructions {
+        display: block !important; /* Ensure desktop instructions are visible */
+    }
+     #game-wrapper {
+        margin-bottom: 20px; /* More space below game on desktop */
+     }
+     #game-container {
+        width: 800px; /* Restore original desktop width */
+        height: 600px; /* Restore original desktop height */
+        max-width: none;
+        max-height: none;
+        aspect-ratio: auto; /* Remove aspect ratio on desktop */
+     }
+     h1 { font-size: 2em; margin-bottom: 20px; } /* Larger title on desktop */
+     #ui { font-size: 1.2em; top: 10px; left: 10px; right: 10px; } /* Larger UI on desktop */
+     #instructions { font-size: 0.9em; bottom: 10px;} /* Larger instructions on desktop */
+     #startButton { padding: 15px 30px; font-size: 1.5em; } /* Larger button on desktop */
+}
+
+
+/* Media Query for very small screens if needed */
 @media (max-width: 360px) {
     h1 { font-size: 1.3em; }
     #ui { font-size: 0.8em; }
     #instructions { font-size: 0.6em; }
     #dpad {
          grid-template-columns: 50px 50px 50px;
-         grid-template-rows: 50px 50px 50px;
+         grid-template-rows: 50px 50px; /* Adjusted rows */
+    }
+    .dpad-button {
+        font-size: 1.5em; /* Slightly smaller icons */
     }
     #shoot-button {
         width: 80px;

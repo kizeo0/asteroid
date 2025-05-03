@@ -1,6 +1,6 @@
 // ========================================================================= //
 //                                                                           //
-//                CONTENIDO COMPLETO DE game.js (Versión Corregida v3)       //
+//                CONTENIDO COMPLETO DE game.js (Versión Corregida v4)       //
 //                                                                           //
 // ========================================================================= //
 
@@ -10,12 +10,12 @@ const scoreDisplay = document.getElementById('score');
 const levelDisplay = document.getElementById('level');
 const livesDisplay = document.getElementById('lives');
 const startButton = document.getElementById('startButton');
-const instructionsDiv = document.getElementById('instructions');
-const touchControlsDiv = document.getElementById('touch-controls');
+const instructionsDiv = document.getElementById('instructions'); // Added instruction div reference
+const touchControlsDiv = document.getElementById('touch-controls'); // Added touch controls div reference
 
 // --- Referencias a Botones Táctiles ---
 const dpadUp = document.getElementById('dpad-up');
-const dpadDown = document.getElementById('dpad-down');
+// Removed dpadDown reference
 const dpadLeft = document.getElementById('dpad-left');
 const dpadRight = document.getElementById('dpad-right');
 const shootButton = document.getElementById('shoot-button');
@@ -39,9 +39,9 @@ const killSound = document.getElementById('killSound');
 const newStageSound = document.getElementById('newStageSound');
 
 // --- Configuración del Juego ---
-const PLAYER_SIZE = 60;
-const ENEMY_SIZE = 45;
-const POWERUP_SIZE = 30;
+const PLAYER_SIZE = 60; // Adjusted size for mobile
+const ENEMY_SIZE = 45;  // Adjusted size for mobile
+const POWERUP_SIZE = 30; // Adjusted size for mobile
 const LASER_SPEED = 6;
 const PLAYER_TURN_SPEED = 0.09;
 const PLAYER_THRUST = 0.1;
@@ -50,12 +50,12 @@ const ENEMY_SPEED_MIN = 0.4;
 const ENEMY_SPEED_MAX = 1.2;
 const POINTS_PER_LEVEL = 10;
 const POWERUP_CHANCE = 0.0015;
-const POWERUP_DURATION = 8000; // Powerups duran 8 seg en pantalla
+const POWERUP_DURATION = 8000; // Powerups last 8 sec on screen
 const RARE_POWERUP_CHANCE_MOD = 0.2;
 const ENEMY_SPAWN_RATE_INITIAL = 140;
 const ENEMY_SPAWN_RATE_INCREASE = 0.96;
 const INITIAL_LIVES = 3;
-const INVINCIBILITY_DURATION = 3500; // 3.5 segundos de invencibilidad <--- CORRECCIÓN
+const INVINCIBILITY_DURATION = 3500; // 3.5 seconds of invincibility
 
 let score = 0;
 let level = 1;
@@ -76,7 +76,7 @@ let player = {
 let lasers = [];
 let enemies = [];
 let powerUps = [];
-let keys = {}; // Objeto para rastrear teclas/botones presionados
+let keys = {}; // Object to track pressed keys/buttons
 
 // --- Carga de Imágenes ---
 let imagesLoadedCount = 0;
@@ -96,28 +96,49 @@ function imageLoaded() {
 // --- Controles (Teclado y Táctil) ---
 document.addEventListener('keydown', (e) => {
     keys[e.code] = true;
-    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) e.preventDefault();
+    // Prevent default for game-related keys
+    if (['ArrowUp', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) { // Removed ArrowDown
+        e.preventDefault();
+    }
 });
-document.addEventListener('keyup', (e) => { keys[e.code] = false; });
+document.addEventListener('keyup', (e) => {
+     // Only set key to false if it was true (important for touch)
+    if (keys[e.code] === true) {
+        keys[e.code] = false;
+    }
+});
 
-// Funciones para manejar eventos táctiles
-function handleTouchStart(e, keyCode) { e.preventDefault(); keys[keyCode] = true; }
-function handleTouchEnd(e, keyCode) { e.preventDefault(); keys[keyCode] = false; }
+// Functions to handle touch events
+function handleTouchStart(e, keyCode) {
+    e.preventDefault();
+    keys[keyCode] = true;
+}
+function handleTouchEnd(e, keyCode) {
+    e.preventDefault();
+    // Use a small timeout to prevent issues with quick taps,
+    // but setting to false directly might be okay for simple controls.
+    // For a more robust solution with multi-touch, you'd track individual touches.
+     keys[keyCode] = false;
+}
 
-// Asignar listeners a los botones táctiles
-[{el: dpadUp, key: 'ArrowUp'}, {el: dpadDown, key: 'ArrowDown'}, {el: dpadLeft, key: 'ArrowLeft'}, {el: dpadRight, key: 'ArrowRight'}, {el: shootButton, key: 'Space'}].forEach(item => {
+// Assign listeners to touch buttons
+[{el: dpadUp, key: 'ArrowUp'}, {el: dpadLeft, key: 'ArrowLeft'}, {el: dpadRight, key: 'ArrowRight'}, {el: shootButton, key: 'Space'}].forEach(item => { // Removed dpadDown
     item.el.addEventListener('touchstart', (e) => handleTouchStart(e, item.key), { passive: false });
     item.el.addEventListener('touchend', (e) => handleTouchEnd(e, item.key), { passive: false });
-    item.el.addEventListener('mousedown', (e) => e.preventDefault()); // Evitar clics fantasma
+     // Also add mouse event listeners for desktop debugging/compatibility
+    item.el.addEventListener('mousedown', (e) => handleTouchStart(e, item.key), { passive: false });
+    item.el.addEventListener('mouseup', (e) => handleTouchEnd(e, item.key), { passive: false });
+    // Handle touch cancellation
+     item.el.addEventListener('touchcancel', (e) => handleTouchEnd(e, item.key), { passive: false });
 });
-touchControlsDiv.style.display = 'none'; // Ocultar controles al inicio
+// touchControlsDiv.style.display is now handled by CSS media query
 
 
 // --- Funciones del Juego ---
 
 function playSound(sound) {
     const clone = sound.cloneNode();
-    clone.volume = sound.volume; // Usar volumen base del elemento original
+    clone.volume = sound.volume; // Use base volume of original element
     clone.play().catch(e => console.warn("Advertencia sonido:", e.message));
 }
 
@@ -131,34 +152,34 @@ function wrapAround(obj) {
 }
 
 function updatePlayer() {
-    // Rotación
+    // Rotation
     player.rotation = keys['ArrowLeft'] ? -PLAYER_TURN_SPEED : (keys['ArrowRight'] ? PLAYER_TURN_SPEED : 0);
     player.angle += player.rotation;
 
-    // Empuje
+    // Thrust
     player.thrusting = keys['ArrowUp'];
     if (player.thrusting) {
         player.vx += Math.cos(player.angle) * PLAYER_THRUST;
         player.vy += Math.sin(player.angle) * PLAYER_THRUST;
     }
 
-    // Fricción y Movimiento
+    // Friction and Movement
     player.vx *= FRICTION;
     player.vy *= FRICTION;
     player.x += player.vx;
     player.y += player.vy;
     wrapAround(player);
 
-    // Disparo
+    // Shooting
     if (player.shootCooldown > 0) player.shootCooldown--;
     if (keys['Space'] && player.shootCooldown <= 0) {
         shootLaser();
         player.shootCooldown = player.currentFireRate;
     }
 
-    // Invencibilidad
+    // Invincibility Timer
     if (player.invincible) {
-        player.invincibilityTimer -= 1000 / 60; // ~16.67ms por frame
+        player.invincibilityTimer -= 1000 / 60; // ~16.67ms per frame
         if (player.invincibilityTimer <= 0) player.invincible = false;
     }
 }
@@ -188,12 +209,11 @@ function updateLasers() {
     }
 }
 
-// *** CORRECCIÓN: spawnEnemy con margen aumentado ***
 function spawnEnemy() {
     const type = Math.random() < 0.5 ? 'lex' : 'mau';
     const edge = Math.floor(Math.random() * 4);
     const w = canvas.width, h = canvas.height;
-    const margin = ENEMY_SIZE * 1.5; // Aparecen más lejos del borde <--- CORRECCIÓN
+    const margin = ENEMY_SIZE * 1.5; // Appear further from the edge
     let x, y;
 
     if (edge === 0) { x = Math.random() * w; y = -margin; } // Top
@@ -215,17 +235,17 @@ function spawnEnemy() {
 
 function updateEnemies() {
     enemySpawnCounter++;
-    const maxEnemies = 12 + level * 2; // Límite de enemigos en pantalla
+    const maxEnemies = 12 + level * 2; // Limit the number of enemies on screen
     if (enemySpawnCounter >= enemySpawnRate && enemies.length < maxEnemies) {
         spawnEnemy();
         enemySpawnCounter = 0;
     }
-    // Mover y envolver enemigos existentes
+    // Move and wrap existing enemies
     enemies.forEach(e => { e.x += e.vx; e.y += e.vy; wrapAround(e); });
 }
 
 function spawnPowerUp() {
-    const type = Math.random() < RARE_POWERUP_CHANCE_MOD ? 'clear_screen' : 'fast_shot'; // fast_shot da vida
+    const type = Math.random() < RARE_POWERUP_CHANCE_MOD ? 'clear_screen' : 'fast_shot'; // fast_shot gives life
     powerUps.push({
         x: Math.random() * (canvas.width - POWERUP_SIZE),
         y: Math.random() * (canvas.height - POWERUP_SIZE),
@@ -235,9 +255,9 @@ function spawnPowerUp() {
 }
 
 function updatePowerUps() {
-    // Spawnea nuevos powerups aleatoriamente
+    // Spawn new powerups randomly
     if (Math.random() < POWERUP_CHANCE && powerUps.length < 2) spawnPowerUp();
-    // Elimina powerups que llevan mucho tiempo en pantalla
+    // Remove powerups that have been on screen for too long
     const now = Date.now();
     for (let i = powerUps.length - 1; i >= 0; i--) {
         if (now - powerUps[i].creationTime > POWERUP_DURATION) powerUps.splice(i, 1);
@@ -249,18 +269,18 @@ function checkCollisions() {
     for (let i = lasers.length - 1; i >= 0; i--) {
         const l = lasers[i];
         for (let j = enemies.length - 1; j >= 0; j--) {
-            // Añadir chequeo por si el enemigo fue eliminado en el mismo frame
+            // Add check in case enemy was removed in the same frame
             if (!enemies[j]) continue;
             const e = enemies[j];
             const dx = l.x - e.x, dy = l.y - e.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist < (l.height / 2 + e.width / 2) * 0.85) { // Sensibilidad colisión laser
+            if (dist < (l.height / 2 + e.width / 2) * 0.85) { // Laser collision sensitivity
                 lasers.splice(i, 1);
-                enemies.splice(j, 1);
+                enemies.splice(j, 1); // Use splice(j, 1) to remove the correct enemy
                 playSound(killSound);
                 score++;
                 updateScoreAndLevel();
-                break; // Laser desaparece al golpear
+                break; // Laser disappears on hit
             }
         }
     }
@@ -271,7 +291,7 @@ function checkCollisions() {
         const dx = player.x - (p.x + p.width / 2);
         const dy = player.y - (p.y + p.height / 2);
         const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < (player.width / 2 + p.width / 2) * 0.9) { // Sensibilidad colisión powerup
+        if (dist < (player.width / 2 + p.width / 2) * 0.9) { // Powerup collision sensitivity
             applyPowerUp(p.type);
             powerUps.splice(i, 1);
         }
@@ -280,40 +300,40 @@ function checkCollisions() {
     // Player vs Enemies
     if (!player.invincible) {
         for (let i = enemies.length - 1; i >= 0; i--) {
-             if (!enemies[i]) continue; // Chequeo extra
+             if (!enemies[i]) continue; // Extra check
             const e = enemies[i];
             const dx = player.x - e.x, dy = player.y - e.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
-             // *** CORRECCIÓN: Factor de colisión reducido ***
-            if (dist < (player.width / 2 + e.width / 2) * 0.70) { // Antes 0.75
+            // Collision factor reduced slightly
+            if (dist < (player.width / 2 + e.width / 2) * 0.70) {
                 hitPlayer();
-                // Opcional: Destruir enemigo que golpeó
+                // Optional: Destroy the hitting enemy
                 // enemies.splice(i, 1);
-                break; // Solo un golpe por frame
+                break; // Only one hit per frame
             }
         }
     }
 }
 
-// *** CORRECCIÓN: hitPlayer modificado para limpiar área ***
+// Function to handle player getting hit
 function hitPlayer() {
-    // Si ya es invencible (por un golpe anterior reciente), no hacer nada
+    // If already invincible (from a recent previous hit), do nothing
     if (player.invincible) return;
 
     lives--;
-    updateScoreAndLevel(); // Actualiza display vidas
+    updateScoreAndLevel(); // Update lives display
 
     if (lives <= 0) {
         console.log("GAME OVER - Vidas agotadas.");
         gameOver("¡HAS PERDIDO!");
     } else {
-        // Aún quedan vidas: limpiar área, reposicionar, dar invencibilidad
+        // Still have lives: clear area, reposition, grant invincibility
         const centerX = canvas.width / 2;
         const centerY = canvas.height / 2;
-        const clearRadius = player.width * 2.5; // Radio a limpiar (más grande)
+        const clearRadius = player.width * 2.5; // Radius to clear (larger)
         let enemiesCleared = 0;
 
-        // Eliminar enemigos cercanos al centro
+        // Remove enemies near the center
         for (let i = enemies.length - 1; i >= 0; i--) {
             const enemy = enemies[i];
             const dx = enemy.x - centerX;
@@ -324,32 +344,32 @@ function hitPlayer() {
             }
         }
 
-        // Reposicionar y hacer invencible
+        // Reposition and make invincible
         player.x = centerX;
         player.y = centerY;
         player.vx = 0;
         player.vy = 0;
         player.angle = -Math.PI / 2;
         player.invincible = true;
-        player.invincibilityTimer = INVINCIBILITY_DURATION; // Resetear timer completo
+        player.invincibilityTimer = INVINCIBILITY_DURATION; // Reset full timer
 
         console.log(`Golpe! Vidas: ${lives}. ${enemiesCleared} enemigos cercanos eliminados. Invencible ${INVINCIBILITY_DURATION}ms.`);
-        // Podrías añadir un sonido de "perder vida" aquí
+        // You could add a "lose life" sound here
         // playSound(hitSound);
     }
 }
 
 
 function applyPowerUp(type) {
-    if (type === 'fast_shot') { // Vida extra (man.png)
-        lives = Math.min(lives + 1, INITIAL_LIVES + 2); // Max 5 vidas
+    if (type === 'fast_shot') { // Extra life (man.png)
+        lives = Math.min(lives + 1, INITIAL_LIVES + 2); // Max 5 lives
         updateScoreAndLevel();
         console.log("Vida extra!");
-        // playSound(lifeSound); // Si tuvieras sonido para vida extra
-    } else if (type === 'clear_screen') { // Limpiar pantalla (luc.png)
-        score += enemies.length; // Puntos por enemigos destruidos
-        enemies = []; // Eliminar todos los enemigos
-        playSound(killSound); // O un sonido tipo "bomba"
+        // playSound(lifeSound); // If you had a sound for extra life
+    } else if (type === 'clear_screen') { // Clear screen (luc.png)
+        score += enemies.length; // Points for destroyed enemies
+        enemies = []; // Remove all enemies
+        playSound(killSound); // Or a "bomb" sound
         updateScoreAndLevel();
         console.log("Pantalla despejada!");
     }
@@ -363,41 +383,41 @@ function updateScoreAndLevel() {
     if (level > previousLevel) {
         levelDisplay.textContent = `Nivel: ${level}`;
         playSound(newStageSound);
-        // Hacer que los enemigos spawneen más rápido, con un límite inferior
+        // Make enemies spawn faster, with a lower limit
         enemySpawnRate = Math.max(30, enemySpawnRate * ENEMY_SPAWN_RATE_INCREASE);
         console.log(`Nivel ${level}! Spawn Rate: ${enemySpawnRate.toFixed(1)} frames`);
     }
 }
 
-// --- Funciones de Dibujo ---
+// --- Drawing Functions ---
 
 function drawPlayer() {
-    // Parpadeo si es invencible
+    // Blink effect if invincible
     if (player.invincible && Math.floor(Date.now() / 100) % 2 === 0) {
-        return; // No dibujar en este frame para efecto parpadeo
+        return; // Don't draw in this frame for blink effect
     }
 
     ctx.save();
     ctx.translate(player.x, player.y);
-    // La rotación depende de cómo está orientada tu imagen pla.png originalmente.
-    // Si pla.png "mira hacia arriba" por defecto: rotar(player.angle + Math.PI / 2)
-    // Si pla.png "mira hacia la derecha" por defecto: rotar(player.angle)
-    // Asumiendo que mira hacia arriba:
+    // Rotation depends on how your pla.png image is originally oriented.
+    // If pla.png "looks up" by default: rotate(player.angle + Math.PI / 2)
+    // If pla.png "looks right" by default: rotate(player.angle)
+    // Assuming it looks up:
     ctx.rotate(player.angle + Math.PI / 2);
     ctx.drawImage(playerImg, -player.width / 2, -player.height / 2, player.width, player.height);
     ctx.restore();
 
-    // Dibujar propulsor si está activo
+    // Draw thruster if active
     if (player.thrusting) {
         ctx.save();
         ctx.translate(player.x, player.y);
-        ctx.rotate(player.angle); // Usar el ángulo de movimiento para la dirección del propulsor
+        ctx.rotate(player.angle); // Use movement angle for thruster direction
         ctx.fillStyle = 'orange';
         ctx.beginPath();
-        // Triángulo simple detrás del jugador, ajustado al tamaño
-        const rearOffset = -player.height / 2 - 2; // Un poco detrás de la base de la nave
+        // Simple triangle behind the player, adjusted to size
+        const rearOffset = -player.height / 2 - 2; // A little behind the base of the ship
         ctx.moveTo(rearOffset, 5);
-        ctx.lineTo(rearOffset - 8, 0); // Punta del fuego
+        ctx.lineTo(rearOffset - 8, 0); // Tip of the flame
         ctx.lineTo(rearOffset, -5);
         ctx.closePath();
         ctx.fill();
@@ -410,7 +430,7 @@ function drawLasers() {
     lasers.forEach(l => {
         ctx.save();
         ctx.translate(l.x, l.y);
-        ctx.rotate(l.angle); // Rotar el rectángulo del láser
+        ctx.rotate(l.angle); // Rotate the laser rectangle
         ctx.fillRect(-l.width / 2, -l.height / 2, l.width, l.height);
         ctx.restore();
     });
@@ -420,7 +440,7 @@ function drawEnemies() {
     enemies.forEach(e => {
         ctx.save();
         ctx.translate(e.x, e.y);
-        // Opcional: rotar enemigos según su dirección
+        // Optional: rotate enemies based on their direction
         // ctx.rotate(Math.atan2(e.vy, e.vx) + Math.PI/2);
         ctx.drawImage(e.image, -e.width / 2, -e.height / 2, e.width, e.height);
         ctx.restore();
@@ -429,102 +449,102 @@ function drawEnemies() {
 
 function drawPowerUps() {
     powerUps.forEach(p => {
-        // Efecto visual de pulso para llamar la atención
-        const pulse = Math.sin(Date.now() * 0.005) * 2; // +2px de tamaño max
+        // Pulse visual effect to attract attention
+        const pulse = Math.sin(Date.now() * 0.005) * 2; // +2px max size
         const w = p.width + pulse;
         const h = p.height + pulse;
-        // Dibujar centrado con el pulso
+        // Draw centered with the pulse
         ctx.drawImage(p.image, p.x - pulse / 2, p.y - pulse / 2, w, h);
     });
 }
 
-// --- Bucle Principal y Gestión del Juego ---
+// --- Main Loop and Game Management ---
 
 function gameLoop() {
-    // Si gameRunning se puso a false (por gameOver), detener el bucle
+    // If gameRunning was set to false (by gameOver), stop the loop
     if (!gameRunning) {
         console.log("Game loop stopping: gameRunning is false.");
         return;
     }
 
-    // 1. Actualizar Estado de todos los elementos
+    // 1. Update State of all elements
     updatePlayer();
     updateLasers();
     updateEnemies();
     updatePowerUps();
 
-    // 2. Comprobar Colisiones (puede cambiar gameRunning a false si llama a gameOver)
+    // 2. Check Collisions (can change gameRunning to false if it calls gameOver)
     checkCollisions();
 
-    // 3. Dibujar (solo si el juego sigue activo después de colisiones)
+    // 3. Draw (only if the game is still active after collisions)
     if (gameRunning) {
-        // Dibujar Fondo (limpia el frame anterior)
+        // Draw Background (clears the previous frame)
         ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
 
-        // Dibujar Elementos del juego
+        // Draw Game Elements
         drawEnemies();
         drawPowerUps();
         drawLasers();
-        drawPlayer(); // Jugador encima de los demás
+        drawPlayer(); // Player on top
 
-        // 4. Solicitar el siguiente frame de animación
+        // 4. Request the next animation frame
         animationFrameId = requestAnimationFrame(gameLoop);
     } else {
          console.log("Game loop detected gameRunning became false after checkCollisions. Halting.");
-         // No solicitar el siguiente frame si el juego terminó en este ciclo
+         // Do not request the next frame if the game ended in this cycle
     }
 }
 
 function startGame() {
-    if (gameRunning) return; // Evitar doble inicio si se hace clic rápido
+    if (gameRunning) return; // Prevent double start if clicked quickly
     console.log("Starting game...");
 
-    // Resetear variables del juego
+    // Reset game state variables
     score = 0; level = 1; lives = INITIAL_LIVES;
     lasers = []; enemies = []; powerUps = []; keys = {};
     enemySpawnCounter = 0; enemySpawnRate = ENEMY_SPAWN_RATE_INITIAL;
-    player = { // Reset completo del objeto jugador
+    player = { // Complete player object reset
         x: canvas.width / 2, y: canvas.height / 2,
         width: PLAYER_SIZE, height: PLAYER_SIZE,
         angle: -Math.PI / 2, vx: 0, vy: 0, rotation: 0, thrusting: false,
         shootCooldown: 0, baseFireRate: 18, currentFireRate: 18,
         fireRateBoostTimer: 0,
-        invincible: true, // Empezar siendo invencible
-        invincibilityTimer: INVINCIBILITY_DURATION // Usar la constante definida
+        invincible: true, // Start with invincibility
+        invincibilityTimer: INVINCIBILITY_DURATION // Use the defined constant
     };
-    updateScoreAndLevel(); // Actualizar UI (puntaje, nivel, vidas)
+    updateScoreAndLevel(); // Update UI (score, level, lives)
 
-    // Actualizar UI y estado del juego
-    gameRunning = true; // IMPORTANTE: Marcar como corriendo ANTES de empezar el bucle
-    startButton.style.display = 'none'; // Ocultar botón "Iniciar"
-    instructionsDiv.style.display = 'none'; // Ocultar instrucciones
-    touchControlsDiv.style.display = 'flex'; // Mostrar controles táctiles
+    // Update UI and game state
+    gameRunning = true; // IMPORTANT: Mark as running BEFORE starting the loop
+    startButton.style.display = 'none'; // Hide "Start" button
+    // instructionDiv display is now handled by CSS media query
+    // touchControlsDiv display is now handled by CSS media query
 
-    // Iniciar o reanudar música de fondo
-    bgMusic.volume = 0.2; // Volumen bajo
-    bgMusic.currentTime = 0; // Reiniciar música
-    bgMusic.play().catch(e => console.log("Música necesita interacción del usuario para empezar."));
+    // Start or resume background music
+    bgMusic.volume = 0.2; // Low volume
+    bgMusic.currentTime = 0; // Reset music
+    bgMusic.play().catch(e => console.log("Music requires user interaction to start."));
 
-    // Limpiar cualquier animación pendiente y empezar el bucle del juego
-    cancelAnimationFrame(animationFrameId); // Buena práctica por si acaso
+    // Clear any pending animation frames and start the game loop
+    cancelAnimationFrame(animationFrameId); // Good practice just in case
     animationFrameId = requestAnimationFrame(gameLoop);
     console.log("Game loop requested.");
 }
 
 function gameOver(message = "¡JUEGO TERMINADO!") {
-    // Solo ejecutar si el juego ESTABA corriendo
+    // Only execute if the game WAS running
     if (!gameRunning) {
          console.log("gameOver called but game not running. Ignoring.");
-         return; // Evitar llamadas múltiples o accidentales
+         return; // Prevent multiple or accidental calls
     }
     console.log(`Game Over: ${message}`);
 
-    gameRunning = false; // Detener el juego INMEDIATAMENTE
-    cancelAnimationFrame(animationFrameId); // Detener el bucle de animación
-    bgMusic.pause(); // Pausar música
+    gameRunning = false; // Stop the game IMMEDIATELY
+    cancelAnimationFrame(animationFrameId); // Stop the animation loop
+    bgMusic.pause(); // Pause music
 
-    // Dibujar la pantalla final sobre el último frame del juego
-    ctx.fillStyle = "rgba(0, 0, 0, 0.75)"; // Fondo oscuro semitransparente
+    // Draw the final screen over the last game frame
+    ctx.fillStyle = "rgba(0, 0, 0, 0.75)"; // Semi-transparent dark background
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = "white";
     ctx.font = "bold 30px Arial"; ctx.textAlign = "center";
@@ -533,32 +553,32 @@ function gameOver(message = "¡JUEGO TERMINADO!") {
     ctx.fillText(`Puntaje final: ${score}`, canvas.width / 2, canvas.height / 2 - 10);
     ctx.fillText(`Nivel alcanzado: ${level}`, canvas.width / 2, canvas.height / 2 + 20);
 
-    // Preparar la UI para poder reiniciar el juego
-    startButton.textContent = "Jugar de Nuevo"; // Cambiar texto del botón
-    startButton.style.display = 'block'; // Mostrar botón para reiniciar
-    touchControlsDiv.style.display = 'none'; // Ocultar controles táctiles
-    instructionsDiv.style.display = 'block'; // Mostrar instrucciones de nuevo
+    // Prepare UI to be able to restart the game
+    startButton.textContent = "Jugar de Nuevo"; // Change button text
+    startButton.style.display = 'block'; // Show button to restart
+    // touchControlsDiv display is now handled by CSS media query
+    // instructionDiv display is now handled by CSS media query
 }
 
-// --- Inicialización ---
-startButton.addEventListener('click', startGame); // El botón inicia el juego
+// --- Initialization ---
+startButton.addEventListener('click', startGame); // The button starts the game
 
-// Función para dibujar la pantalla inicial antes de empezar
+// Function to draw the initial screen before starting
 function showInitialScreen() {
-    // Asegurarse que el juego no esté corriendo y detener cualquier bucle
+    // Ensure the game is not running and stop any loop
     gameRunning = false;
     cancelAnimationFrame(animationFrameId);
 
-    // Dibujar fondo negro o imagen de fondo
+    // Draw black background or background image
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     if (bgImg.complete && bgImg.naturalWidth > 0) {
         ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
     }
-    // Dibujar cuadro de texto semitransparente
+    // Draw semi-transparent text box
     ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
     ctx.fillRect(0, canvas.height * 0.3, canvas.width, canvas.height * 0.4);
-    // Dibujar textos
+    // Draw texts
     ctx.fillStyle = 'white';
     ctx.font = 'bold 24px Arial'; ctx.textAlign = 'center';
     ctx.fillText('ASTEROIDES INFINITO', canvas.width / 2, canvas.height / 2 - 20);
@@ -566,25 +586,25 @@ function showInitialScreen() {
     ctx.fillText('¡Prepara tus láseres!', canvas.width / 2, canvas.height / 2 + 10);
     ctx.fillText('Pulsa "Iniciar Juego"', canvas.width / 2, canvas.height / 2 + 40);
 
-    // Asegurar estado correcto de la UI
-    instructionsDiv.style.display = 'block'; // Mostrar instrucciones
-    touchControlsDiv.style.display = 'none'; // Ocultar controles táctiles
-    startButton.textContent = "Iniciar Juego"; // Texto inicial del botón
-    startButton.style.display = 'block'; // Mostrar botón de inicio
+    // Ensure correct UI state
+    // instructionDiv display is now handled by CSS media query
+    // touchControlsDiv display is now handled by CSS media query
+    startButton.textContent = "Iniciar Juego"; // Initial button text
+    startButton.style.display = 'block'; // Show start button
 }
 
-// Esperar a que carguen las imágenes esenciales y mostrar pantalla inicial
+// Wait for essential images to load and show the initial screen
 let initialLoadCheck = setInterval(() => {
-    // Esperar al menos fondo y jugador para mostrar algo
+    // Wait for at least background and player to show something
     if (imagesLoadedCount >= 2) {
         clearInterval(initialLoadCheck);
         showInitialScreen();
     }
 }, 100);
-// Mostrar pantalla igualmente después de 5 segundos si algo falla
+// Show screen anyway after 5 seconds if something fails
 setTimeout(() => {
      clearInterval(initialLoadCheck);
-     if (!gameRunning) { // Solo si no ha empezado ya por alguna razón
+     if (!gameRunning) { // Only if it hasn't started already for some reason
         showInitialScreen();
      }
 }, 5000);
