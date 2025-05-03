@@ -601,11 +601,11 @@ ctx.fillText('¡Prepara tus láseres!', canvas.width / 2, canvas.height / 2 - 30
 ctx.fillText('Haz clic en "Iniciar Juego" cuando estés listo.', canvas.width / 2, canvas.height / 2);
 document.getElementById('instructions').style.display = 'none'; // Ocultar instrucciones al inicio
 
-
-// Controles táctiles para móviles
+// Controles táctiles con pad fuera del canvas
 const leftBtn = document.getElementById('leftBtn');
 const rightBtn = document.getElementById('rightBtn');
 const upBtn = document.getElementById('upBtn');
+const downBtn = document.getElementById('downBtn'); // si deseas usar ↓ en el futuro
 const fireBtn = document.getElementById('fireBtn');
 
 if (leftBtn && rightBtn && upBtn && fireBtn) {
@@ -625,4 +625,9 @@ if (leftBtn && rightBtn && upBtn && fireBtn) {
 
     fireBtn.addEventListener('touchstart', () => simulateKey(32, 'keydown'));
     fireBtn.addEventListener('touchend', () => simulateKey(32, 'keyup'));
+
+    if (downBtn) {
+        downBtn.addEventListener('touchstart', () => simulateKey(40, 'keydown'));
+        downBtn.addEventListener('touchend', () => simulateKey(40, 'keyup'));
+    }
 }

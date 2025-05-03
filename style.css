@@ -94,20 +94,46 @@ audio {
     gap: 15px;
     z-index: 10;
 }
+/* NUEVO: Controles fuera del canvas */
+#mobile-wrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    width: 90%;
+    max-width: 800px;
+}
 
-#mobile-controls button {
+#pad-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+#pad-controls > div {
+    display: flex;
+    gap: 10px;
+}
+
+#pad-controls button,
+#fireBtn {
     background-color: #222;
     color: #0f0;
     border: 2px solid #0f0;
-    border-radius: 50%;
+    border-radius: 10px;
     padding: 20px;
     font-size: 1.5em;
     box-shadow: 0 0 5px #0f0;
     cursor: pointer;
 }
 
+#fireBtn {
+    padding: 25px 30px;
+}
+
 @media (min-width: 801px) {
-    #mobile-controls {
+    #mobile-wrapper {
         display: none;
     }
 }
