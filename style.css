@@ -1,7 +1,25 @@
-/* ... tus estilos previos ... */
+
+body {
+    background-color: #000;
+    color: #eee;
+    font-family: 'Arial', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0;
+    padding-top: 20px;
+    overflow: hidden;
+}
+
+h1 {
+    color: #0f0;
+    text-shadow: 0 0 5px #0f0;
+}
 
 #game-container {
     position: relative;
+    border: 2px solid #0f0;
+    box-shadow: 0 0 10px #0f0;
     max-width: 100%;
     overflow: hidden;
     display: flex;
@@ -10,9 +28,69 @@
 }
 
 canvas {
+    display: block;
+    background-color: #000;
     width: 100%;
     height: auto;
     max-height: 80vh;
+}
+
+#ui {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    display: flex;
+    justify-content: space-between;
+    color: #fff;
+    font-size: 1.2em;
+    text-shadow: 1px 1px 2px black;
+    pointer-events: none;
+}
+
+#score {
+    text-align: left;
+}
+
+#level {
+    text-align: right;
+}
+
+#startButton {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 15px 30px;
+    font-size: 1.5em;
+    cursor: pointer;
+    background-color: #0a0;
+    color: white;
+    border: 2px solid #0f0;
+    border-radius: 5px;
+    box-shadow: 0 0 8px #0f0;
+    z-index: 10;
+}
+
+#startButton:hover {
+    background-color: #0c0;
+}
+
+#instructions {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #ccc;
+    font-size: 0.9em;
+    text-align: center;
+    width: 90%;
+    pointer-events: none;
+    z-index: 5;
+}
+
+audio {
+    display: none;
 }
 
 #touch-controls {
@@ -60,6 +138,6 @@ canvas {
 
 @media (min-width: 768px) {
     #touch-controls {
-        display: none; /* Ocultar en pantallas grandes */
+        display: none;
     }
 }

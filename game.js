@@ -587,16 +587,6 @@ function gameOver(message = "¡Has Perdido!") {
     document.getElementById('instructions').style.display = 'none'; // Ocultar instrucciones
 }
 
-function simulateKey(code, type = 'keydown') {
-    const event = new KeyboardEvent(type, { key: code });
-    document.dispatchEvent(event);
-}
-
-document.getElementById('btn-up').addEventListener('touchstart', () => simulateKey('ArrowUp'));
-document.getElementById('btn-left').addEventListener('touchstart', () => simulateKey('ArrowLeft'));
-document.getElementById('btn-right').addEventListener('touchstart', () => simulateKey('ArrowRight'));
-document.getElementById('btn-down').addEventListener('touchstart', () => simulateKey('ArrowDown'));
-document.getElementById('btn-shoot').addEventListener('touchstart', () => simulateKey(' ', 'keydown'));
 
 // --- Inicio del Juego ---
 startButton.addEventListener('click', startGame);
@@ -610,3 +600,15 @@ ctx.textAlign = 'center';
 ctx.fillText('¡Prepara tus láseres!', canvas.width / 2, canvas.height / 2 - 30);
 ctx.fillText('Haz clic en "Iniciar Juego" cuando estés listo.', canvas.width / 2, canvas.height / 2);
 document.getElementById('instructions').style.display = 'none'; // Ocultar instrucciones al inicio
+
+
+function simulateKey(code, type = 'keydown') {
+    const event = new KeyboardEvent(type, { key: code });
+    document.dispatchEvent(event);
+}
+
+document.getElementById('btn-up').addEventListener('touchstart', () => simulateKey('ArrowUp'));
+document.getElementById('btn-left').addEventListener('touchstart', () => simulateKey('ArrowLeft'));
+document.getElementById('btn-right').addEventListener('touchstart', () => simulateKey('ArrowRight'));
+document.getElementById('btn-down').addEventListener('touchstart', () => simulateKey('ArrowDown'));
+document.getElementById('btn-shoot').addEventListener('touchstart', () => simulateKey(' ', 'keydown'));
