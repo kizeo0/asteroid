@@ -12,13 +12,23 @@
         <canvas id="gameCanvas" width="800" height="600"></canvas>
         <div id="ui">
             <div id="score">Puntaje: 0</div>
-            <div id="lives">Vidas: 3</div> <div id="level">Nivel: 1</div>
+            <div id="lives">Vidas: 3</div>
+            <div id="level">Nivel: 1</div>
         </div>
         <button id="startButton">Iniciar Juego</button>
         <div id="instructions">
             Usa las flechas ← → para girar, ↑ para acelerar, y [Espacio] para disparar.
         </div>
-    </div>
+
+        <div id="mobile-controls">
+            <div id="dpad">
+                <div id="dpad-up"></div>
+                <div id="dpad-left"></div>
+                <div id="dpad-right"></div>
+                </div>
+            <div id="shootButtonMobile"></div>
+        </div>
+        </div>
 
     <audio id="bgMusic" src="music.mp3" preload="auto" loop></audio>
     <audio id="shotSound" src="shot.mp3" preload="auto"></audio>
