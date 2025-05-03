@@ -33,7 +33,7 @@ const killSound = document.getElementById('killSound');
 const newStageSound = document.getElementById('newStageSound');
 
 // --- Configuración del Juego ---
-const PLAYER_SIZE = 60; // Ajustado: Aumenta el tamaño del jugador
+const PLAYER_SIZE = 120; // Ajustado: Aumenta el tamaño del jugador
 const ENEMY_SIZE = 70;  // Ajustado: Aumenta el tamaño de los enemigos
 const POWERUP_SIZE = 45; // Ajustado: Aumenta el tamaño de los power-ups
 const LASER_SPEED = 7;
@@ -186,7 +186,12 @@ function updatePlayer() {
 function shootLaser() {
     // Calcular punto de origen (punta de la nave)
     // Asumimos que la punta está en el centro frontal de la imagen
-    const laserOriginDist = player.height / 2;
+    // Ajuste: Usar player.width / 2 si la "punta" de la imagen pla.png
+    // está a lo largo del eje horizontal del sprite (antes de la rotación del juego).
+    // Si la punta está a lo largo del eje vertical (arriba/abajo) del sprite,
+    // player.height / 2 era correcto.
+    // Si el disparo sale por los lados, probar con player.width / 2.
+    const laserOriginDist = player.width / 2; // <-- POSIBLE CAMBIO AQUÍ (antes era player.height / 2)
     const laserX = player.x + Math.cos(player.angle) * laserOriginDist;
     const laserY = player.y + Math.sin(player.angle) * laserOriginDist;
 
@@ -202,7 +207,6 @@ function shootLaser() {
     lasers.push(laser);
     playSound(shotSound);
 }
-
 function updateLasers() {
     for (let i = lasers.length - 1; i >= 0; i--) {
         const laser = lasers[i];
@@ -375,18 +379,36 @@ function hitPlayer() {
 
 
 function applyPowerUp(type) {
-    if (type === 'fast_shot') {
-        player.currentFireRate = player.baseFireRate / 2; // Duplica la velocidad de disparo
-        player.fireRateBoostTimer = POWERUP_DURATION;
-        console.log("Fast Shot Activated!");
-    } else if (type === 'clear_screen') {
+    // El power-up man.png está asociado con el tipo 'fast_shot' en tu código actual.
+    // Cambiamos la lógica para que el tipo 'fast_shot' ahora dé una vida.
+    if (type === 'fast_shot') { // Si el power-up es el que usa man.png ('fast_shot')
+        lives++; // Aumenta el número de vidas
+
+        // Opcional: Poner un límite máximo de vidas (ej: no más de 5)
+        const maxLives = INITIAL_LIVES + 2; // Límite de vidas = Vidas iniciales + 2 (ej: 3 + 2 = 5)
+        if (lives > maxLives) {
+             lives = maxLives;
+        }
+        // Fin Opcional
+
+        updateScoreAndLevel(); // Actualiza el display de vidas en la interfaz
+        console.log("¡Vida extra obtenida!");
+        // Puedes añadir aquí la reproducción de un sonido de vida extra si tienes uno
+        // playSound(lifeSound); // Necesitarías cargar un sonido 'lifeSound'
+
+    } else if (type === 'clear_screen') { // La lógica para luc.png (clear_screen)
         // Dar puntos por enemigos eliminados
         score += enemies.length;
         enemies = []; // Elimina todos los enemigos
-        playSound(killSound); // Quizás un sonido diferente?
+        playSound(killSound); // O un sonido diferente para limpiar la pantalla
         updateScoreAndLevel();
-        console.log("Screen Cleared!");
+        console.log("¡Pantalla despejada!");
     }
+    // Elimina aquí la lógica antigua de 'fast_shot' si ya no la quieres (la hemos reemplazado arriba)
+    // La lógica antigua era:
+    // player.currentFireRate = player.baseFireRate / 2;
+    // player.fireRateBoostTimer = POWERUP_DURATION;
+
 }
 
 
