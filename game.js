@@ -4,14 +4,6 @@ const scoreDisplay = document.getElementById('score');
 const levelDisplay = document.getElementById('level');
 const livesDisplay = document.getElementById('lives'); // Añadido para mostrar vidas
 const startButton = document.getElementById('startButton');
-const mobileControls = document.getElementById('mobile-controls'); // Añadido: Referencia a controles móviles
-
-// Añadido: Referencias a los elementos de control móvil
-const dpadUp = document.getElementById('dpad-up');
-const dpadLeft = document.getElementById('dpad-left');
-const dpadRight = document.getElementById('dpad-right');
-const shootButtonMobile = document.getElementById('shootButtonMobile');
-
 
 // --- Recursos ---
 const playerImg = new Image();
@@ -28,8 +20,8 @@ enemyImages.lex.src = 'lex.png';
 enemyImages.mau.src = 'mau.png';
 
 const powerUpImages = {
-    fast_shot: new Image(), // man.png
-    clear_screen: new Image() // luc.png
+    fast_shot: new Image(),
+    clear_screen: new Image()
 };
 powerUpImages.fast_shot.src = 'man.png';
 powerUpImages.clear_screen.src = 'luc.png';
@@ -41,9 +33,9 @@ const killSound = document.getElementById('killSound');
 const newStageSound = document.getElementById('newStageSound');
 
 // --- Configuración del Juego ---
-const PLAYER_SIZE = 60; // Ajustado: Aumenta el tamaño del jugador
+const PLAYER_SIZE = 120; // Ajustado: Aumenta el tamaño del jugador
 const ENEMY_SIZE = 70;  // Ajustado: Aumenta el tamaño de los enemigos
-const POWERUP_SIZE = 45; // Ajustado: Aumenta el tamaño de man/luc.png
+const POWERUP_SIZE = 45; // Ajustado: Aumenta el tamaño de los power-ups
 const LASER_SPEED = 7;
 const PLAYER_TURN_SPEED = 0.08; // Radianes por frame
 const PLAYER_THRUST = 0.1;
@@ -88,11 +80,18 @@ let player = {
 let lasers = [];
 let enemies = [];
 let powerUps = [];
-let keys = {}; // Este objeto ahora manejará tanto el teclado como los controles táctiles
+let keys = {}; // Object to track keyboard state (and now touch state)
 
 // --- Carga de Imágenes ---
 let imagesLoaded = 0;
-const totalImages = 1 + 1 + Object.keys(enemyImages).length + Object.keys(powerUpImages).length; // player + bg + enemies + powerups
+// Add mobile control images to the count
+const totalImages = 1 + 1 + Object.keys(enemyImages).length + Object.keys(powerUpImages).length + 2; // player + bg + enemies + powerups + dpad + shootButton
+
+const dpadImg = new Image();
+dpadImg.src = 'cruz.png';
+const shootButtonImg = new Image();
+shootButtonImg.src = 'boton.png';
+
 
 function imageLoaded() {
     imagesLoaded++;
@@ -106,101 +105,167 @@ playerImg.onload = imageLoaded;
 bgImg.onload = imageLoaded;
 enemyImages.lex.onload = imageLoaded;
 enemyImages.mau.onload = imageLoaded;
-powerUpImages.fast_shot.onload = imageLoaded; // man.png
-powerUpImages.clear_screen.onload = imageLoaded; // luc.png
+powerUpImages.fast_shot.onload = imageLoaded;
+powerUpImages.clear_screen.onload = imageLoaded;
+dpadImg.onload = imageLoaded; // Load d-pad image
+shootButtonImg.onload = imageLoaded; // Load shoot button image
 
-// --- Controles (Adaptados para Teclado y Táctil) ---
-
-// Manejo de eventos de teclado (sigue funcionando)
+// --- Controles de Teclado ---
 document.addEventListener('keydown', (e) => {
-    // Solo si gameRunning para evitar mover la nave en la pantalla de inicio con el teclado
-     if (gameRunning) {
-        keys[e.code] = true;
-        // Evitar que la página haga scroll con las flechas/espacio
-        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) {
-            e.preventDefault();
-        }
-     }
+    keys[e.code] = true;
+    // Evitar que la página haga scroll con las flechas/espacio
+    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) {
+        e.preventDefault();
+    }
 });
 
 document.addEventListener('keyup', (e) => {
-     if (gameRunning) {
-        keys[e.code] = false;
-     }
+    keys[e.code] = false;
 });
 
-// *** Lógica para Controles Táctiles/Ratón ***
+// --- Controles Táctiles (Nuevos) ---
+const dpadElement = document.getElementById('dpad');
+const shootButtonElement = document.getElementById('shootButton');
 
-// Función para manejar el inicio de un toque o clic en un control
-function handleControlStart(event, key) {
-    // Prevenir el comportamiento táctil por defecto (scroll, zoom)
-    if (event.cancelable) event.preventDefault();
-    keys[key] = true; // Simula la pulsación de la tecla
-    // console.log(`${key} pressed via touch/mouse`);
-}
+if (dpadElement && shootButtonElement) { // Check if elements exist (i.e., not on desktop hiding them)
 
-// Función para manejar el final de un toque o clic en un control
-function handleControlEnd(event, key) {
-     // event.preventDefault(); // No siempre necesario para touchend/mouseup
-     keys[key] = false; // Simula la liberación de la tecla
-     // console.log(`${key} released via touch/mouse`);
-}
+    // Function to get touch position relative to an element
+    function getTouchPos(element, touch) {
+        const rect = element.getBoundingClientRect();
+        return {
+            x: touch.clientX - rect.left,
+            y: touch.clientY - rect.top
+        };
+    }
 
-// Añadir listeners para eventos táctiles (prioridad para móviles)
-if ('ontouchstart' in window) {
-    // Eventos táctiles
-    dpadUp.addEventListener('touchstart', (e) => handleControlStart(e, 'ArrowUp'), { passive: false }); // Flecha arriba = Acelerar
-    dpadLeft.addEventListener('touchstart', (e) => handleControlStart(e, 'ArrowLeft'), { passive: false }); // Flecha izquierda = Girar izquierda
-    dpadRight.addEventListener('touchstart', (e) => handleControlStart(e, 'ArrowRight'), { passive: false }); // Flecha derecha = Girar derecha
-    shootButtonMobile.addEventListener('touchstart', (e) => handleControlStart(e, 'Space'), { passive: false }); // Botón de disparo = Espacio
+    // D-pad touch logic
+    dpadElement.addEventListener('touchstart', (e) => {
+        e.preventDefault(); // Prevent default touch behavior (like scrolling)
+        const touch = e.touches[0]; // Get the first touch
+        const pos = getTouchPos(dpadElement, touch);
+        const { width, height } = dpadElement.getBoundingClientRect();
 
-    dpadUp.addEventListener('touchend', (e) => handleControlEnd(e, 'ArrowUp'));
-    dpadLeft.addEventListener('touchend', (e) => handleControlEnd(e, 'ArrowLeft'));
-    dpadRight.addEventListener('touchend', (e) => handleControlEnd(e, 'ArrowRight'));
-    shootButtonMobile.addEventListener('touchend', (e) => handleControlEnd(e, 'Space'));
+        // Determine direction based on touch position within the d-pad image
+        // This assumes a standard cross shape where touch position indicates direction
+        // You might need to adjust the thresholds based on your cruz.png design
+        const deadZone = width * 0.2; // A small area in the center that doesn't trigger movement
 
-     // Manejar también touchcancel por si el toque se interrumpe o sale del elemento
-    dpadUp.addEventListener('touchcancel', (e) => handleControlEnd(e, 'ArrowUp'));
-    dpadLeft.addEventListener('touchcancel', (e) => handleControlEnd(e, 'ArrowLeft'));
-    dpadRight.addEventListener('touchcancel', (e) => handleControlEnd(e, 'ArrowRight'));
-    shootButtonMobile.addEventListener('touchcancel', (e) => handleControlEnd(e, 'Space'));
+        keys['ArrowUp'] = false;
+        keys['ArrowDown'] = false; // Assuming d-pad doesn't control reverse thrust
+        keys['ArrowLeft'] = false;
+        keys['ArrowRight'] = false;
+        player.thrusting = false; // Reset thrusting for d-pad
 
-} else {
-    // Eventos de ratón para probar en desktop o dispositivos sin touch
-    // (Estos se activarán si no se detectan eventos táctiles)
-    dpadUp.addEventListener('mousedown', (e) => handleControlStart(e, 'ArrowUp'));
-    dpadLeft.addEventListener('mousedown', (e) => handleControlStart(e, 'ArrowLeft'));
-    dpadRight.addEventListener('mousedown', (e) => handleControlStart(e, 'ArrowRight'));
-    shootButtonMobile.addEventListener('mousedown', (e) => handleControlStart(e, 'Space'));
+        if (pos.y < height / 2 - deadZone) { // Upper half (likely Up)
+            keys['ArrowUp'] = true;
+            player.thrusting = true;
+        } else if (pos.y > height / 2 + deadZone) { // Lower half (likely Down - not used for thrust in this game)
+            // keys['ArrowDown'] = true; // If you wanted a reverse
+        }
 
-    // Usar mouseup en el documento para asegurar que el estado de la tecla se restablece
-    // incluso si el ratón se levanta fuera del botón.
-    document.addEventListener('mouseup', (e) => {
-        if (keys['ArrowUp']) handleControlEnd(e, 'ArrowUp');
-        if (keys['ArrowLeft']) handleControlEnd(e, 'ArrowLeft');
-        if (keys['ArrowRight']) handleControlEnd(e, 'ArrowRight');
-        if (keys['Space']) handleControlEnd(e, 'Space');
+        if (pos.x < width / 2 - deadZone) { // Left half (likely Left)
+            keys['ArrowLeft'] = true;
+        } else if (pos.x > width / 2 + deadZone) { // Right half (likely Right)
+            keys['ArrowRight'] = true;
+        }
+
+         // Handle diagonal movements (optional, can be tricky with a single image)
+         // For simplicity, the above handles cardinal directions.
     });
-     // Añadir mouseleave a los botones para casos específicos, aunque mouseup en document es más robusto
-     dpadUp.addEventListener('mouseleave', (e) => { if (keys['ArrowUp']) handleControlEnd(e, 'ArrowUp'); });
-     dpadLeft.addEventListener('mouseleave', (e) => { if (keys['ArrowLeft']) handleControlEnd(e, 'ArrowLeft'); });
-     dpadRight.addEventListener('mouseleave', (e) => { if (keys['ArrowRight']) handleControlEnd(e, 'ArrowRight'); });
-     shootButtonMobile.addEventListener('mouseleave', (e) => { if (keys['Space']) handleControlEnd(e, 'Space'); });
+
+    dpadElement.addEventListener('touchmove', (e) => {
+        e.preventDefault(); // Prevent default touch behavior
+         // Update direction based on touch position as it moves
+        const touch = e.touches[0];
+        const pos = getTouchPos(dpadElement, touch);
+        const { width, height } = dpadElement.getBoundingClientRect();
+        const deadZone = width * 0.2;
+
+        // Reset all directions first
+        keys['ArrowUp'] = false;
+        keys['ArrowDown'] = false;
+        keys['ArrowLeft'] = false;
+        keys['ArrowRight'] = false;
+        player.thrusting = false;
+
+        if (pos.y < height / 2 - deadZone) { // Upper half (likely Up)
+            keys['ArrowUp'] = true;
+            player.thrusting = true;
+        } else if (pos.y > height / 2 + deadZone) { // Lower half
+            // keys['ArrowDown'] = true;
+        }
+
+        if (pos.x < width / 2 - deadZone) { // Left half
+            keys['ArrowLeft'] = true;
+        } else if (pos.x > width / 2 + deadZone) { // Right half
+            keys['ArrowRight'] = true;
+        }
+    });
+
+    dpadElement.addEventListener('touchend', (e) => {
+        e.preventDefault(); // Prevent default touch behavior
+        // Stop all movement when touch ends
+        keys['ArrowUp'] = false;
+        keys['ArrowDown'] = false;
+        keys['ArrowLeft'] = false;
+        keys['ArrowRight'] = false;
+        player.thrusting = false;
+    });
+
+     dpadElement.addEventListener('touchcancel', (e) => {
+        e.preventDefault(); // Prevent default touch behavior
+        // Stop all movement if touch is cancelled
+        keys['ArrowUp'] = false;
+        keys['ArrowDown'] = false;
+        keys['ArrowLeft'] = false;
+        keys['ArrowRight'] = false;
+        player.thrusting = false;
+    });
+
+    // Shoot button touch logic
+    shootButtonElement.addEventListener('touchstart', (e) => {
+        e.preventDefault(); // Prevent default touch behavior
+        keys['Space'] = true; // Simulate Space key press
+    });
+
+    shootButtonElement.addEventListener('touchend', (e) => {
+        e.preventDefault(); // Prevent default touch behavior
+        keys['Space'] = false; // Simulate Space key release
+    });
+
+     shootButtonElement.addEventListener('touchcancel', (e) => {
+        e.preventDefault(); // Prevent default touch behavior
+        keys['Space'] = false; // Simulate Space key release
+    });
 }
 
 
 // --- Funciones del Juego ---
-// ... (mantener las funciones playSound, wrapAround, updatePlayer, etc.) ...
+
+function playSound(sound) {
+    // Clona el nodo para permitir reproducciones superpuestas rápidas
+    const soundClone = sound.cloneNode();
+    soundClone.volume = sound.volume; // Mantener el volumen original si se ajusta
+    soundClone.play().catch(e => console.error("Error al reproducir sonido:", e));
+}
+
+function wrapAround(obj) {
+    if (obj.x < -obj.width / 2) obj.x = canvas.width + obj.width / 2;
+    if (obj.x > canvas.width + obj.width / 2) obj.x = -obj.width / 2;
+    if (obj.y < -obj.height / 2) obj.y = canvas.height + obj.height / 2;
+    if (obj.y > canvas.height + obj.height / 2) obj.y = -obj.height / 2;
+}
 
 function updatePlayer() {
-    // Rotación - Ahora lee del objeto keys, que se actualiza con teclado O controles táctiles
+    // Rotación
     if (keys['ArrowLeft']) player.rotation = -PLAYER_TURN_SPEED;
     else if (keys['ArrowRight']) player.rotation = PLAYER_TURN_SPEED;
     else player.rotation = 0;
     player.angle += player.rotation;
 
-    // Empuje (Thrust) - Ahora lee del objeto keys
-    player.thrusting = keys['ArrowUp'];
+    // Empuje (Thrust)
+    // Now 'thrusting' is set by either keyboard (ArrowUp) or d-pad touch
+    // player.thrusting = keys['ArrowUp']; // This line is now handled by touch events as well
     if (player.thrusting) {
         player.vx += Math.cos(player.angle) * PLAYER_THRUST;
         player.vy += Math.sin(player.angle) * PLAYER_THRUST;
@@ -217,10 +282,11 @@ function updatePlayer() {
     // Wrap Around Screen Edges
     wrapAround(player);
 
-    // Disparo - Ahora lee del objeto keys
+    // Disparo
     if (player.shootCooldown > 0) {
         player.shootCooldown--;
     }
+    // Check for shooting via keyboard (Space) or touch (Space simulated)
     if (keys['Space'] && player.shootCooldown <= 0) {
         shootLaser();
         player.shootCooldown = player.currentFireRate;
@@ -245,27 +311,232 @@ function updatePlayer() {
     }
 }
 
-// ... (mantener shootLaser, updateLasers, spawnEnemy, updateEnemies,
-// spawnPowerUp, updatePowerUps, checkCollisions, hitPlayer) ...
+function shootLaser() {
+    // Calcular punto de origen (punta de la nave)
+    // Asumimos que la punta está en el centro frontal de la imagen
+    // Ajuste: Usar player.width / 2 si la "punta" de la imagen pla.png
+    // está a lo largo del eje horizontal del sprite (antes de la rotación del juego).
+    // Si la punta está a lo largo del eje vertical (arriba/abajo) del sprite,
+    // player.height / 2 era correcto.
+    // Si el disparo sale por los lados, probar con player.width / 2.
+    const laserOriginDist = player.width / 2; // <-- POSIBLE CAMBIO AQUÍ (antes era player.height / 2)
+    const laserX = player.x + Math.cos(player.angle) * laserOriginDist;
+    const laserY = player.y + Math.sin(player.angle) * laserOriginDist;
+
+    const laser = {
+        x: laserX,
+        y: laserY,
+        vx: Math.cos(player.angle) * LASER_SPEED + player.vx * 0.5, // Añadir algo de velocidad de la nave
+        vy: Math.sin(player.angle) * LASER_SPEED + player.vy * 0.5,
+        width: 4, // Ancho del láser
+        height: 10, // Largo del láser (se ajustará con rotación)
+        angle: player.angle // Para dibujar rotado
+    };
+    lasers.push(laser);
+    playSound(shotSound);
+}
+function updateLasers() {
+    for (let i = lasers.length - 1; i >= 0; i--) {
+        const laser = lasers[i];
+        laser.x += laser.vx;
+        laser.y += laser.vy;
+
+        // Eliminar si sale de la pantalla
+        if (laser.x < 0 || laser.x > canvas.width || laser.y < 0 || laser.y > canvas.height) {
+            lasers.splice(i, 1);
+        }
+    }
+}
+
+function spawnEnemy() {
+    const type = Math.random() < 0.5 ? 'lex' : 'mau';
+    const edge = Math.floor(Math.random() * 4); // 0: top, 1: right, 2: bottom, 3: left
+    let x, y;
+
+    if (edge === 0) { // Top
+        x = Math.random() * canvas.width;
+        y = -ENEMY_SIZE / 2;
+    } else if (edge === 1) { // Right
+        x = canvas.width + ENEMY_SIZE / 2;
+        y = Math.random() * canvas.height;
+    } else if (edge === 2) { // Bottom
+        x = Math.random() * canvas.width;
+        y = canvas.height + ENEMY_SIZE / 2;
+    } else { // Left
+        x = -ENEMY_SIZE / 2;
+        y = Math.random() * canvas.height;
+    }
+
+    const angle = Math.random() * Math.PI * 2;
+    const speed = ENEMY_SPEED_MIN + Math.random() * (ENEMY_SPEED_MAX - ENEMY_SPEED_MIN) + (level * 0.1); // Aumenta velocidad con nivel
+
+    enemies.push({
+        x: x,
+        y: y,
+        width: ENEMY_SIZE,
+        height: ENEMY_SIZE,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        type: type,
+        image: enemyImages[type]
+    });
+}
+
+function updateEnemies() {
+    enemySpawnCounter++;
+    if (enemySpawnCounter >= enemySpawnRate) {
+        spawnEnemy();
+        enemySpawnCounter = 0;
+    }
+
+    for (let i = enemies.length - 1; i >= 0; i--) {
+        const enemy = enemies[i];
+        enemy.x += enemy.vx;
+        enemy.y += enemy.vy;
+        wrapAround(enemy);
+    }
+}
+
+function spawnPowerUp() {
+    const type = Math.random() < RARE_POWERUP_CHANCE_MOD ? 'clear_screen' : 'fast_shot';
+    powerUps.push({
+        x: Math.random() * (canvas.width - POWERUP_SIZE),
+        y: Math.random() * (canvas.height - POWERUP_SIZE),
+        width: POWERUP_SIZE,
+        height: POWERUP_SIZE,
+        type: type,
+        image: powerUpImages[type],
+        creationTime: Date.now(),
+        duration: 10000 // Desaparece después de 10 segundos si no se recoge
+    });
+}
+
+function updatePowerUps() {
+    // Spawn aleatorio
+    if (Math.random() < POWERUP_CHANCE && powerUps.length < 2) { // Limitar a 2 powerups en pantalla
+        spawnPowerUp();
+    }
+
+    // Actualizar y eliminar los viejos
+    const now = Date.now();
+    for (let i = powerUps.length - 1; i >= 0; i--) {
+        const pu = powerUps[i];
+        if (now - pu.creationTime > pu.duration) {
+            powerUps.splice(i, 1);
+        }
+    }
+}
 
 
-// Función para aplicar power-ups (ya la modificamos para vidas)
+function checkCollisions() {
+    // Lasers vs Enemies
+    for (let i = lasers.length - 1; i >= 0; i--) {
+        const laser = lasers[i];
+        for (let j = enemies.length - 1; j >= 0; j--) {
+            const enemy = enemies[j];
+
+            // Detección de colisión simple (rectángulos)
+            // Se podría mejorar con círculos si las imágenes son redondas
+            const dx = laser.x - enemy.x;
+            const dy = laser.y - enemy.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            // Comprobar colisión (simplificado con radios promedio)
+            if (distance < (laser.width + enemy.width) / 2.5) { // Ajustar divisor para mejor feel
+                lasers.splice(i, 1);
+                enemies.splice(j, 1); // Eliminar solo el enemigo actual
+                playSound(killSound);
+                score++;
+                updateScoreAndLevel();
+                break; // El láser solo puede golpear a un enemigo
+            }
+        }
+    }
+
+    // Player vs PowerUps
+    for (let i = powerUps.length - 1; i >= 0; i--) {
+        const pu = powerUps[i];
+        const dx = player.x - (pu.x + pu.width / 2); // Centro del powerup
+        const dy = player.y - (pu.y + pu.height / 2);
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance < (player.width + pu.width) / 3) { // Ajustar divisor
+            applyPowerUp(pu.type);
+            powerUps.splice(i, 1);
+            // Podrías añadir un sonido de power-up aquí
+        }
+    }
+
+    // Player vs Enemies (Añadido: Detección de colisión del jugador)
+    if (!player.invincible) { // Solo verifica colisión si el jugador no es invulnerable
+        for (let i = enemies.length - 1; i >= 0; i--) {
+            const enemy = enemies[i];
+            const dx = player.x - enemy.x;
+            const dy = player.y - enemy.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            // Comprobar colisión (ajustar divisor para mejor feel)
+            if (distance < (player.width / 2 + enemy.width / 2) * 0.7) { // Reducir el radio de colisión un poco
+                 hitPlayer(); // Llama a la función cuando el jugador es golpeado
+                 break; // Solo necesita ser golpeado por un enemigo a la vez
+            }
+        }
+    }
+}
+
+// Añadido: Función para manejar cuando el jugador es golpeado
+function hitPlayer() {
+    lives--;
+    updateScoreAndLevel(); // Actualiza el display de vidas
+
+    if (lives <= 0) {
+        gameOver("¡Has Perdido!");
+    } else {
+        // Reiniciar posición del jugador y dar invulnerabilidad temporal
+        player.x = canvas.width / 2;
+        player.y = canvas.height / 2;
+        player.vx = 0;
+        player.vy = 0;
+        player.angle = -Math.PI / 2;
+        player.invincible = true;
+        player.invincibilityTimer = 3000; // 3 segundos de invulnerabilidad
+        // Podrías añadir un efecto visual (parpadeo) para indicar invulnerabilidad
+        console.log(`Player hit! Lives remaining: ${lives}`);
+    }
+}
+
+
 function applyPowerUp(type) {
-    if (type === 'fast_shot') { // man.png power-up
-        lives++;
-        const maxLives = INITIAL_LIVES + 2; // Cap lives at 5
+    // El power-up man.png está asociado con el tipo 'fast_shot' en tu código actual.
+    // Cambiamos la lógica para que el tipo 'fast_shot' ahora dé una vida.
+    if (type === 'fast_shot') { // Si el power-up es el que usa man.png ('fast_shot')
+        lives++; // Aumenta el número de vidas
+
+        // Opcional: Poner un límite máximo de vidas (ej: no más de 5)
+        const maxLives = INITIAL_LIVES + 2; // Límite de vidas = Vidas iniciales + 2 (ej: 3 + 2 = 5)
         if (lives > maxLives) {
              lives = maxLives;
         }
-        updateScoreAndLevel();
+        // Fin Opcional
+
+        updateScoreAndLevel(); // Actualiza el display de vidas en la interfaz
         console.log("¡Vida extra obtenida!");
-    } else if (type === 'clear_screen') { // luc.png power-up
+        // Puedes añadir aquí la reproducción de un sonido de vida extra si tienes uno
+        // playSound(lifeSound); // Necesitarías cargar un sonido 'lifeSound'
+
+    } else if (type === 'clear_screen') { // La lógica para luc.png (clear_screen)
+        // Dar puntos por enemigos eliminados
         score += enemies.length;
-        enemies = [];
-        playSound(killSound);
+        enemies = []; // Elimina todos los enemigos
+        playSound(killSound); // O un sonido diferente para limpiar la pantalla
         updateScoreAndLevel();
         console.log("¡Pantalla despejada!");
     }
+    // Elimina aquí la lógica antigua de 'fast_shot' si ya no la quieres (la hemos reemplazado arriba)
+    // La lógica antigua era:
+    // player.currentFireRate = player.baseFireRate / 2;
+    // player.fireRateBoostTimer = POWERUP_DURATION;
+
 }
 
 
@@ -280,12 +551,74 @@ function updateScoreAndLevel() {
         levelDisplay.textContent = `Nivel: ${level}`;
         playSound(newStageSound);
         // Aumentar dificultad
-        enemySpawnRate *= ENEMY_SPAWN_RATE_INCREASE;
+        enemySpawnRate *= ENEMY_SPAWN_RATE_INCREASE; // Hace que spawneen más rápido
+        // Podrías aumentar ENEMY_SPEED_MAX también
         console.log(`Level Up! New Spawn Rate Factor: ${enemySpawnRate}`);
+    }
+
+    if (score >= MAX_SCORE && gameRunning) {
+         // Podrías mostrar un mensaje de "Puntaje Máximo Alcanzado!"
+         // O simplemente dejar que siga jugando, ya que pediste infinito.
+         console.log("Puntaje máximo (1000) alcanzado o superado!");
+         // Para detener el juego: gameOver("¡Puntaje Máximo!");
     }
 }
 
-// ... (mantener drawPlayer, drawLasers, drawEnemies, drawPowerUps) ...
+function drawPlayer() {
+     // Añadido: Efecto de parpadeo si es invulnerable
+    if (player.invincible) {
+        const blinkRate = 150; // ms
+        const isVisible = (Date.now() % blinkRate * 2) < blinkRate;
+        if (!isVisible) {
+            return; // No dibujar si está parpadeando 'apagado'
+        }
+    }
+
+    ctx.save(); // Guarda el estado actual del contexto (posición, rotación)
+    ctx.translate(player.x, player.y); // Mueve el origen al centro de la nave
+    ctx.rotate(player.angle); // Rota el contexto
+    // Dibuja la imagen centrada en el nuevo origen
+    ctx.drawImage(playerImg, -player.width / 2, -player.height / 2, player.width, player.height);
+
+    // Opcional: Dibuja el propulsor si está activo
+    if (player.thrusting) {
+        ctx.fillStyle = 'orange';
+        ctx.beginPath();
+        // Triángulo simple para el propulsor detrás de la nave
+        ctx.moveTo(-player.width / 2 - 5, 0); // Punto base izquierdo
+        ctx.lineTo(-player.width / 2 - 15, 5); // Punto trasero
+        ctx.lineTo(-player.width / 2 - 15, -5); // Punto trasero
+        ctx.closePath();
+        ctx.fill();
+    }
+
+    ctx.restore(); // Restaura el estado previo del contexto
+}
+
+
+function drawLasers() {
+    for (const laser of lasers) {
+        ctx.save();
+        ctx.translate(laser.x, laser.y);
+        ctx.rotate(laser.angle + Math.PI / 2); // Rota para que el rectángulo apunte correctamente
+        ctx.fillStyle = 'red';
+        // Dibuja el rectángulo centrado en su posición local (0,0) después de trasladar/rotar
+        ctx.fillRect(-laser.width / 2, -laser.height / 2, laser.width, laser.height);
+        ctx.restore();
+    }
+}
+
+function drawEnemies() {
+    for (const enemy of enemies) {
+        ctx.drawImage(enemy.image, enemy.x - enemy.width / 2, enemy.y - enemy.height / 2, enemy.width, enemy.height);
+    }
+}
+
+function drawPowerUps() {
+    for (const pu of powerUps) {
+        ctx.drawImage(pu.image, pu.x, pu.y, pu.width, pu.height);
+    }
+}
 
 function gameLoop() {
     if (!gameRunning) return;
@@ -316,13 +649,13 @@ function gameLoop() {
 }
 
 function startGame() {
-    if (gameRunning) return;
+    if (gameRunning) return; // Evitar iniciar múltiples veces
 
     // Resetear estado del juego
     score = 0;
     level = 1;
-    lives = INITIAL_LIVES;
-    player = {
+    lives = INITIAL_LIVES; // Añadido: Resetear vidas al inicio
+    player = { // Resetear posición, velocidad, etc.
         x: canvas.width / 2,
         y: canvas.height / 2,
         width: PLAYER_SIZE,
@@ -336,27 +669,33 @@ function startGame() {
         baseFireRate: 15,
         currentFireRate: 15,
         fireRateBoostTimer: 0,
-        invincible: true,
-        invincibilityTimer: 3000
+        invincible: true, // Añadido: Invulnerabilidad al inicio del juego
+        invincibilityTimer: 3000 // Añadido: Duración de la invulnerabilidad inicial
     };
     lasers = [];
     enemies = [];
     powerUps = [];
-    keys = {}; // Limpiar el estado de las teclas/controles al iniciar
+    keys = {}; // Reset keys state
+    enemySpawnCounter = 0;
+    enemySpawnRate = ENEMY_SPAWN_RATE_INITIAL;
 
-    updateScoreAndLevel();
+    updateScoreAndLevel(); // Pone los displays a 0/1/3
 
     gameRunning = true;
-    startButton.style.display = 'none';
-    document.getElementById('instructions').style.display = 'block'; // Mostrar instrucciones de teclado (se ocultarán con CSS en móvil)
+    startButton.style.display = 'none'; // Ocultar botón de inicio
+    // Hide desktop instructions and show mobile controls if they exist
+    document.getElementById('instructions').style.display = 'none';
+     if (dpadElement && shootButtonElement) {
+        dpadElement.style.display = 'block';
+        shootButtonElement.style.display = 'block';
+    }
 
-    // Activar la interactividad de los controles móviles
-    mobileControls.classList.add('active');
 
+    // Iniciar música de fondo (requiere interacción del usuario previa)
+    bgMusic.volume = 0.3; // Volumen bajo para no molestar
+    bgMusic.play().catch(e => console.log("El navegador bloqueó la reproducción automática de música. Se necesita interacción."));
 
-    bgMusic.volume = 0.3;
-    bgMusic.play().catch(e => console.log("El navegador bloqueó la reproducción automática de música."));
-
+    // Iniciar el bucle
     gameLoop();
 }
 
@@ -364,12 +703,9 @@ function gameOver(message = "¡Has Perdido!") {
     gameRunning = false;
     cancelAnimationFrame(animationFrameId);
     bgMusic.pause();
-    bgMusic.currentTime = 0;
+    bgMusic.currentTime = 0; // Reiniciar música para la próxima vez
 
-    // Desactivar la interactividad de los controles móviles al terminar el juego
-    mobileControls.classList.remove('active');
-
-
+    // Mostrar mensaje de Game Over (puedes hacerlo más elegante)
     ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = "white";
@@ -380,9 +716,14 @@ function gameOver(message = "¡Has Perdido!") {
     ctx.fillText(`Puntaje final: ${score}`, canvas.width / 2, canvas.height / 2);
     ctx.fillText(`Nivel alcanzado: ${level}`, canvas.width / 2, canvas.height / 2 + 30);
 
-    startButton.textContent = "Jugar de Nuevo";
-    startButton.style.display = 'block';
-    // Las instrucciones se muestran o ocultan con CSS basado en el tamaño de pantalla
+    startButton.textContent = "Jugar de Nuevo"; // Cambiar texto del botón
+    startButton.style.display = 'block'; // Mostrar botón para reiniciar
+    // Show desktop instructions and hide mobile controls
+    document.getElementById('instructions').style.display = 'block';
+     if (dpadElement && shootButtonElement) {
+        dpadElement.style.display = 'none';
+        shootButtonElement.style.display = 'none';
+    }
 }
 
 
@@ -397,8 +738,8 @@ ctx.font = '20px Arial';
 ctx.textAlign = 'center';
 ctx.fillText('¡Prepara tus láseres!', canvas.width / 2, canvas.height / 2 - 30);
 ctx.fillText('Haz clic en "Iniciar Juego" cuando estés listo.', canvas.width / 2, canvas.height / 2);
-// Las instrucciones iniciales se ocultan al inicio, y la media query de CSS las controlará después.
-// document.getElementById('instructions').style.display = 'none'; // Esto se controla mejor con CSS ahora
-
-// Desactivar controles móviles al cargar la página hasta que inicie el juego
-mobileControls.classList.remove('active');
+// Hide mobile controls initially
+if (dpadElement && shootButtonElement) {
+    dpadElement.style.display = 'none';
+    shootButtonElement.style.display = 'none';
+}
