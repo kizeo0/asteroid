@@ -5,6 +5,14 @@ const levelDisplay = document.getElementById('level');
 const livesDisplay = document.getElementById('lives'); // Añadido para mostrar vidas
 const startButton = document.getElementById('startButton');
 
+// --- Referencias a los botones móviles ---
+const mobileControls = document.getElementById('mobile-controls');
+const upButton = document.getElementById('up-button');
+const downButton = document.getElementById('down-button');
+const leftButton = document.getElementById('left-button');
+const rightButton = document.getElementById('right-button');
+const fireButton = document.getElementById('fire-button');
+
 // --- Recursos ---
 const playerImg = new Image();
 playerImg.src = 'pla.png';
@@ -80,18 +88,11 @@ let player = {
 let lasers = [];
 let enemies = [];
 let powerUps = [];
-let keys = {}; // Object to track keyboard state (and now touch state)
+let keys = {}; // Objeto para manejar el estado de las teclas/botones
 
 // --- Carga de Imágenes ---
 let imagesLoaded = 0;
-// Add mobile control images to the count
-const totalImages = 1 + 1 + Object.keys(enemyImages).length + Object.keys(powerUpImages).length + 2; // player + bg + enemies + powerups + dpad + shootButton
-
-const dpadImg = new Image();
-dpadImg.src = 'cruz.png';
-const shootButtonImg = new Image();
-shootButtonImg.src = 'boton.png';
-
+const totalImages = 1 + 1 + Object.keys(enemyImages).length + Object.keys(powerUpImages).length; // player + bg + enemies + powerups
 
 function imageLoaded() {
     imagesLoaded++;
@@ -107,137 +108,83 @@ enemyImages.lex.onload = imageLoaded;
 enemyImages.mau.onload = imageLoaded;
 powerUpImages.fast_shot.onload = imageLoaded;
 powerUpImages.clear_screen.onload = imageLoaded;
-dpadImg.onload = imageLoaded; // Load d-pad image
-shootButtonImg.onload = imageLoaded; // Load shoot button image
 
 // --- Controles de Teclado ---
 document.addEventListener('keydown', (e) => {
-    keys[e.code] = true;
-    // Evitar que la página haga scroll con las flechas/espacio
-    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) {
-        e.preventDefault();
+    // Solo procesar si el juego está corriendo
+    if (gameRunning) {
+        keys[e.code] = true;
+        // Evitar que la página haga scroll con las flechas/espacio
+        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) {
+            e.preventDefault();
+        }
     }
 });
 
 document.addEventListener('keyup', (e) => {
-    keys[e.code] = false;
+    // Solo procesar si el juego está corriendo
+    if (gameRunning) {
+        keys[e.code] = false;
+    }
 });
 
-// --- Controles Táctiles (Nuevos) ---
-const dpadElement = document.getElementById('dpad');
-const shootButtonElement = document.getElementById('shootButton');
+// --- Controles Móviles (Touch/Click) ---
 
-if (dpadElement && shootButtonElement) { // Check if elements exist (i.e., not on desktop hiding them)
+// Función genérica para manejar el estado de los botones
+function setupButtonControls(button, keyCodes) {
+    const startEvent = 'touchstart'; // Use touchstart for mobile
+    const endEvent = 'touchend';   // Use touchend for mobile
+    const mouseDownEvent = 'mousedown'; // Also include mouse events for testing on desktop
+    const mouseUpEvent = 'mouseup';   // Also include mouse events for testing on desktop
 
-    // Function to get touch position relative to an element
-    function getTouchPos(element, touch) {
-        const rect = element.getBoundingClientRect();
-        return {
-            x: touch.clientX - rect.left,
-            y: touch.clientY - rect.top
-        };
-    }
-
-    // D-pad touch logic
-    dpadElement.addEventListener('touchstart', (e) => {
-        e.preventDefault(); // Prevent default touch behavior (like scrolling)
-        const touch = e.touches[0]; // Get the first touch
-        const pos = getTouchPos(dpadElement, touch);
-        const { width, height } = dpadElement.getBoundingClientRect();
-
-        // Determine direction based on touch position within the d-pad image
-        // This assumes a standard cross shape where touch position indicates direction
-        // You might need to adjust the thresholds based on your cruz.png design
-        const deadZone = width * 0.2; // A small area in the center that doesn't trigger movement
-
-        keys['ArrowUp'] = false;
-        keys['ArrowDown'] = false; // Assuming d-pad doesn't control reverse thrust
-        keys['ArrowLeft'] = false;
-        keys['ArrowRight'] = false;
-        player.thrusting = false; // Reset thrusting for d-pad
-
-        if (pos.y < height / 2 - deadZone) { // Upper half (likely Up)
-            keys['ArrowUp'] = true;
-            player.thrusting = true;
-        } else if (pos.y > height / 2 + deadZone) { // Lower half (likely Down - not used for thrust in this game)
-            // keys['ArrowDown'] = true; // If you wanted a reverse
-        }
-
-        if (pos.x < width / 2 - deadZone) { // Left half (likely Left)
-            keys['ArrowLeft'] = true;
-        } else if (pos.x > width / 2 + deadZone) { // Right half (likely Right)
-            keys['ArrowRight'] = true;
-        }
-
-         // Handle diagonal movements (optional, can be tricky with a single image)
-         // For simplicity, the above handles cardinal directions.
-    });
-
-    dpadElement.addEventListener('touchmove', (e) => {
-        e.preventDefault(); // Prevent default touch behavior
-         // Update direction based on touch position as it moves
-        const touch = e.touches[0];
-        const pos = getTouchPos(dpadElement, touch);
-        const { width, height } = dpadElement.getBoundingClientRect();
-        const deadZone = width * 0.2;
-
-        // Reset all directions first
-        keys['ArrowUp'] = false;
-        keys['ArrowDown'] = false;
-        keys['ArrowLeft'] = false;
-        keys['ArrowRight'] = false;
-        player.thrusting = false;
-
-        if (pos.y < height / 2 - deadZone) { // Upper half (likely Up)
-            keys['ArrowUp'] = true;
-            player.thrusting = true;
-        } else if (pos.y > height / 2 + deadZone) { // Lower half
-            // keys['ArrowDown'] = true;
-        }
-
-        if (pos.x < width / 2 - deadZone) { // Left half
-            keys['ArrowLeft'] = true;
-        } else if (pos.x > width / 2 + deadZone) { // Right half
-            keys['ArrowRight'] = true;
+    button.addEventListener(startEvent, (e) => {
+        if (gameRunning) {
+            e.preventDefault(); // Prevent default touch behavior
+            keyCodes.forEach(code => keys[code] = true);
         }
     });
 
-    dpadElement.addEventListener('touchend', (e) => {
-        e.preventDefault(); // Prevent default touch behavior
-        // Stop all movement when touch ends
-        keys['ArrowUp'] = false;
-        keys['ArrowDown'] = false;
-        keys['ArrowLeft'] = false;
-        keys['ArrowRight'] = false;
-        player.thrusting = false;
+    button.addEventListener(endEvent, (e) => {
+        if (gameRunning) {
+            e.preventDefault(); // Prevent default touch behavior
+            // Use a small timeout to allow for multi-touch inputs if needed,
+            // but for simple controls, just setting to false is usually fine.
+            // If experiencing issues with rapid presses, a more complex touch tracking
+            // might be needed. For now, this simple approach should work.
+             keyCodes.forEach(code => keys[code] = false);
+        }
     });
 
-     dpadElement.addEventListener('touchcancel', (e) => {
-        e.preventDefault(); // Prevent default touch behavior
-        // Stop all movement if touch is cancelled
-        keys['ArrowUp'] = false;
-        keys['ArrowDown'] = false;
-        keys['ArrowLeft'] = false;
-        keys['ArrowRight'] = false;
-        player.thrusting = false;
+     // Also add mouse event listeners for desktop debugging/compatibility
+    button.addEventListener(mouseDownEvent, (e) => {
+         if (gameRunning) {
+             e.preventDefault();
+             keyCodes.forEach(code => keys[code] = true);
+         }
     });
 
-    // Shoot button touch logic
-    shootButtonElement.addEventListener('touchstart', (e) => {
-        e.preventDefault(); // Prevent default touch behavior
-        keys['Space'] = true; // Simulate Space key press
+    button.addEventListener(mouseUpEvent, (e) => {
+         if (gameRunning) {
+             e.preventDefault();
+             keyCodes.forEach(code => keys[code] = false);
+         }
     });
 
-    shootButtonElement.addEventListener('touchend', (e) => {
-        e.preventDefault(); // Prevent default touch behavior
-        keys['Space'] = false; // Simulate Space key release
-    });
-
-     shootButtonElement.addEventListener('touchcancel', (e) => {
-        e.preventDefault(); // Prevent default touch behavior
-        keys['Space'] = false; // Simulate Space key release
+    // Handle touch cancellation (e.g., touch moves off the element)
+    button.addEventListener('touchcancel', (e) => {
+        if (gameRunning) {
+            e.preventDefault();
+            keyCodes.forEach(code => keys[code] = false);
+        }
     });
 }
+
+// Asignar controles a los botones
+setupButtonControls(upButton, ['ArrowUp']);
+setupButtonControls(downButton, ['ArrowDown']); // Down arrow doesn't do anything by default, but good to have
+setupButtonControls(leftButton, ['ArrowLeft']);
+setupButtonControls(rightButton, ['ArrowRight']);
+setupButtonControls(fireButton, ['Space']);
 
 
 // --- Funciones del Juego ---
@@ -264,8 +211,7 @@ function updatePlayer() {
     player.angle += player.rotation;
 
     // Empuje (Thrust)
-    // Now 'thrusting' is set by either keyboard (ArrowUp) or d-pad touch
-    // player.thrusting = keys['ArrowUp']; // This line is now handled by touch events as well
+    player.thrusting = keys['ArrowUp'];
     if (player.thrusting) {
         player.vx += Math.cos(player.angle) * PLAYER_THRUST;
         player.vy += Math.sin(player.angle) * PLAYER_THRUST;
@@ -286,7 +232,6 @@ function updatePlayer() {
     if (player.shootCooldown > 0) {
         player.shootCooldown--;
     }
-    // Check for shooting via keyboard (Space) or touch (Space simulated)
     if (keys['Space'] && player.shootCooldown <= 0) {
         shootLaser();
         player.shootCooldown = player.currentFireRate;
@@ -551,7 +496,7 @@ function updateScoreAndLevel() {
         levelDisplay.textContent = `Nivel: ${level}`;
         playSound(newStageSound);
         // Aumentar dificultad
-        enemySpawnRate *= ENEMY_SPAWN_RATE_INCREASE; // Hace que spawneen más rápido
+        enemySpawnRate *= ENEMY_SPAWN_RATE_INCREase; // Hace que spawneen más rápido
         // Podrías aumentar ENEMY_SPEED_MAX también
         console.log(`Level Up! New Spawn Rate Factor: ${enemySpawnRate}`);
     }
@@ -675,7 +620,7 @@ function startGame() {
     lasers = [];
     enemies = [];
     powerUps = [];
-    keys = {}; // Reset keys state
+    keys = {}; // Limpiar el estado de las teclas/botones al inicio
     enemySpawnCounter = 0;
     enemySpawnRate = ENEMY_SPAWN_RATE_INITIAL;
 
@@ -683,12 +628,10 @@ function startGame() {
 
     gameRunning = true;
     startButton.style.display = 'none'; // Ocultar botón de inicio
-    // Hide desktop instructions and show mobile controls if they exist
-    document.getElementById('instructions').style.display = 'none';
-     if (dpadElement && shootButtonElement) {
-        dpadElement.style.display = 'block';
-        shootButtonElement.style.display = 'block';
-    }
+    document.getElementById('instructions').style.display = 'none'; // Ocultar instrucciones de teclado
+
+    // Activar controles móviles
+    mobileControls.classList.add('active');
 
 
     // Iniciar música de fondo (requiere interacción del usuario previa)
@@ -705,6 +648,12 @@ function gameOver(message = "¡Has Perdido!") {
     bgMusic.pause();
     bgMusic.currentTime = 0; // Reiniciar música para la próxima vez
 
+    // Desactivar controles móviles
+    mobileControls.classList.remove('active');
+     // Resetear el estado de las teclas/botones al terminar el juego
+    keys = {};
+
+
     // Mostrar mensaje de Game Over (puedes hacerlo más elegante)
     ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -718,12 +667,7 @@ function gameOver(message = "¡Has Perdido!") {
 
     startButton.textContent = "Jugar de Nuevo"; // Cambiar texto del botón
     startButton.style.display = 'block'; // Mostrar botón para reiniciar
-    // Show desktop instructions and hide mobile controls
-    document.getElementById('instructions').style.display = 'block';
-     if (dpadElement && shootButtonElement) {
-        dpadElement.style.display = 'none';
-        shootButtonElement.style.display = 'none';
-    }
+    // La instrucciones de teclado se mantienen ocultas en móvil por defecto con el CSS
 }
 
 
@@ -738,8 +682,7 @@ ctx.font = '20px Arial';
 ctx.textAlign = 'center';
 ctx.fillText('¡Prepara tus láseres!', canvas.width / 2, canvas.height / 2 - 30);
 ctx.fillText('Haz clic en "Iniciar Juego" cuando estés listo.', canvas.width / 2, canvas.height / 2);
-// Hide mobile controls initially
-if (dpadElement && shootButtonElement) {
-    dpadElement.style.display = 'none';
-    shootButtonElement.style.display = 'none';
-}
+document.getElementById('instructions').style.display = 'none'; // Ocultar instrucciones al inicio (serán visibles en desktop via CSS media query)
+
+// Asegúrate de que los controles móviles estén ocultos inicialmente
+mobileControls.classList.remove('active');

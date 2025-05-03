@@ -19,9 +19,19 @@
             Usa las flechas ← → para girar, ↑ para acelerar, y [Espacio] para disparar.
         </div>
 
-        <img src="cruz.png" id="dpad" alt="Control Pad">
-        <img src="boton.png" id="shootButton" alt="Disparar">
+        <div id="mobile-controls">
+            <div class="dpad">
+                <button id="up-button" class="control-button">↑</button>
+                <div class="left-right">
+                    <button id="left-button" class="control-button">←</button>
+                    <button id="right-button" class="control-button">→</button>
+                </div>
+                <button id="down-button" class="control-button">↓</button>
+            </div>
+            <button id="fire-button" class="control-button">Disparar</button>
         </div>
+
+    </div>
 
     <audio id="bgMusic" src="music.mp3" preload="auto" loop></audio>
     <audio id="shotSound" src="shot.mp3" preload="auto"></audio>
