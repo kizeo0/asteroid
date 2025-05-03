@@ -1,0 +1,93 @@
+body {
+    background-color: #111;
+    color: #eee;
+    font-family: 'Arial', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0;
+    padding-top: 20px;
+    overflow: hidden; /* Evita barras de scroll */
+}
+
+h1 {
+    color: #0f0; /* Color verde neón */
+    text-shadow: 0 0 5px #0f0;
+}
+
+#game-container {
+    position: relative; /* Para posicionar UI y botón */
+    border: 2px solid #0f0; /* Borde neón */
+    box-shadow: 0 0 10px #0f0;
+}
+
+canvas {
+    display: block; /* Elimina espacio extra debajo del canvas */
+    background-color: #000; /* Fondo negro si la imagen tarda en cargar */
+}
+
+#ui {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    display: flex;
+    justify-content: space-between; /* Ajusta la distribución de los elementos */
+    color: #fff;
+    font-size: 1.2em;
+    text-shadow: 1px 1px 2px black;
+    pointer-events: none; /* Para que no interfiera con clics en el canvas */
+}
+
+#score {
+    text-align: left;
+}
+
+#level {
+    text-align: right;
+}
+
+/* Opcional: Estilo específico para las vidas si lo necesitas */
+/* #lives {
+    text-align: center;
+    margin: 0 auto;
+} */
+
+
+#startButton {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 15px 30px;
+    font-size: 1.5em;
+    cursor: pointer;
+    background-color: #0a0;
+    color: white;
+    border: 2px solid #0f0;
+    border-radius: 5px;
+    box-shadow: 0 0 8px #0f0;
+    z-index: 10; /* Encima del canvas */
+}
+
+#startButton:hover {
+    background-color: #0c0;
+}
+
+#instructions {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #ccc;
+    font-size: 0.9em;
+    text-align: center;
+    width: 90%;
+    pointer-events: none; /* No interfiere con clics */
+    z-index: 5;
+}
+
+/* Ocultar controles de audio por defecto */
+audio {
+    display: none;
+}

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asteroides Infinito</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Asteroides Infinito</h1>
+    <div id="game-container">
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div id="ui">
+            <div id="score">Puntaje: 0</div>
+            <div id="lives">Vidas: 3</div> <div id="level">Nivel: 1</div>
+        </div>
+        <button id="startButton">Iniciar Juego</button>
+        <div id="instructions">
+            Usa las flechas ← → para girar, ↑ para acelerar, y [Espacio] para disparar.
+        </div>
+    </div>
+
+    <audio id="bgMusic" src="music.mp3" preload="auto" loop></audio>
+    <audio id="shotSound" src="shot.mp3" preload="auto"></audio>
+    <audio id="killSound" src="kill.mp3" preload="auto"></audio>
+    <audio id="newStageSound" src="newstage.mp3" preload="auto"></audio>
+
+    <script src="game.js"></script>
+</body>
+</html>
