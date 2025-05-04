@@ -51,26 +51,67 @@ canvas {
     height: 100%; /* Ocupa toda la altura del contenedor */
 }
 
-/* Interfaz de Usuario (Puntaje, Vidas, Nivel) */
+/* --- ESTILOS UI MEJORADOS (VIDA, PUNTAJE, NIVEL) --- */
 #ui {
     position: absolute;
-    top: 5px; /* Más cerca del borde */
-    left: 5px;
-    right: 5px;
-    display: flex;
-    justify-content: space-between;
+    top: 10px;
+    left: 10px;
+    background: linear-gradient(135deg, rgba(20, 30, 40, 0.85), rgba(40, 50, 60, 0.75)); /* Fondo gradiente oscuro */
     color: #fff;
-    font-size: 0.9em; /* Más pequeño en móvil */
-    text-shadow: 1px 1px 1px black;
-    pointer-events: none;
-    z-index: 2;
+    padding: 10px 15px;
+    border-radius: 5px; /* Bordes ligeramente redondeados */
+    border: 1px solid rgba(100, 150, 200, 0.6); /* Borde azulado sutil */
+    box-shadow: 0 0 8px rgba(100, 150, 255, 0.4), /* Sombra exterior azulada */
+                inset 0 0 5px rgba(0, 0, 0, 0.3); /* Sombra interior ligera */
+    font-family: 'Courier New', Courier, monospace; /* Fuente monoespaciada tipo consola */
+    font-size: 1.1em; /* Tamaño base */
+    display: flex;
+    flex-direction: column;
+    gap: 6px; /* Espacio entre líneas */
+    z-index: 10; /* Asegurar que esté por encima del canvas */
+    pointer-events: none; /* Permite hacer clic a través de la UI */
+    text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.8); /* Sombra más definida para legibilidad */
 }
 
-#score, #lives, #level {
-    background-color: rgba(0, 0, 0, 0.5); /* Fondo semitransparente */
-    padding: 2px 5px;
-    border-radius: 3px;
+#ui div {
+    margin: 0;
+    padding: 0;
+    white-space: nowrap; /* Evitar que el texto se parta */
 }
+
+#score::before { /* Icono (texto) antes del puntaje */
+    content: "\2605\00a0"; /* ★ Estrella Unicode + Espacio no rompible */
+    color: #FFD700; /* Dorado */
+    margin-right: 3px; /* Menor margen */
+}
+#score {
+    font-weight: bold;
+    color: #ffffaa; /* Amarillo pálido */
+}
+
+#lives::before { /* Icono (texto) antes de las vidas */
+    content: "\2764\00a0"; /* ❤ Corazón Unicode + Espacio no rompible */
+    color: #FF4444; /* Rojo brillante */
+    margin-right: 3px; /* Menor margen */
+    /* font-size: 1.1em; /* Hacer corazón un poco más grande si se desea */
+}
+#lives {
+    font-weight: bold;
+    color: #ffaaaa; /* Rojo pálido */
+}
+
+#level::before { /* Icono (texto) antes del nivel */
+    content: "\21EA\00a0"; /* ⇪ Flecha arriba Unicode (o usar "Lv.") + Espacio */
+    /* Alternativa: content: "Lv.\00a0"; */
+    color: #88ccff; /* Azul cielo */
+    margin-right: 3px; /* Menor margen */
+}
+#level {
+    font-weight: bold;
+    color: #aaaaff; /* Azul/violeta pálido */
+}
+/* --- FIN ESTILOS UI MEJORADOS --- */
+
 
 /* Botón de Inicio */
 #startButton {
@@ -113,62 +154,57 @@ canvas {
 
 /* --- Controles Táctiles --- */
 #touch-controls {
-    /* Show controls by default and hide with media query for desktop */
-    display: flex; /* Changed from 'none' to 'flex' */
-    justify-content: space-around; /* Espacia D-pad y botón de disparo */
-    align-items: center; /* Centra verticalmente los botones */
+    display: flex; /* Mostrar por defecto */
+    justify-content: space-around;
+    align-items: center;
     width: 100%;
-    max-width: 500px; /* Mismo ancho que el juego */
-    padding: 15px 10px; /* Más padding vertical */
+    max-width: 500px;
+    padding: 15px 10px;
     box-sizing: border-box;
-    /* background-color: #222; */ /* Descomenta para ver el área */
-    flex-shrink: 0; /* Evita que se encoja */
-    user-select: none; /* Evita seleccionar texto en los botones */
-    -webkit-user-select: none; /* Safari */
-    -moz-user-select: none; /* Firefox */
-    -ms-user-select: none; /* IE */
+    flex-shrink: 0;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
 }
 
 #dpad {
     display: grid;
     grid-template-areas:
         ". up ."
-        "left . right"; /* Removed down area */
-    grid-template-columns: 60px 60px 60px; /* Size of columns */
-    grid-template-rows: 60px 60px; /* Reduced rows to 2 */
-    gap: 5px; /* Espacio entre botones */
+        "left . right"; /* Sin botón abajo */
+    grid-template-columns: 60px 60px 60px;
+    grid-template-rows: 60px 60px; /* 2 filas */
+    gap: 5px;
 }
 
 .dpad-button {
-    background-color: rgba(0, 153, 0, 0.6); /* Verde semitransparente */
+    background-color: rgba(0, 153, 0, 0.6);
     border: 2px solid #0f0;
     color: #fff;
-    font-size: 1.8em; /* Íconos grandes */
-    border-radius: 10px; /* Bordes redondeados */
+    font-size: 1.8em;
+    border-radius: 10px;
     display: flex;
     justify-content: center;
     align-items: center;
     cursor: pointer;
-    touch-action: manipulation; /* Optimiza respuesta táctil, evita zoom */
+    touch-action: manipulation;
     transition: background-color 0.1s ease;
 }
 
-/* Estilo al presionar el botón */
 .dpad-button:active, #shoot-button:active {
-    background-color: rgba(0, 255, 0, 0.8); /* Verde más brillante */
+    background-color: rgba(0, 255, 0, 0.8); /* Verde más brillante al presionar dpad */
 }
 
-/* Asignar botones a áreas del grid */
 #dpad-up { grid-area: up; }
-/* Removed #dpad-down rule */
 #dpad-left { grid-area: left; }
 #dpad-right { grid-area: right; }
 
 #shoot-button {
-    width: 100px; /* Ancho */
-    height: 80px; /* Alto */
+    width: 100px;
+    height: 80px;
     background-color: rgba(204, 0, 0, 0.6); /* Rojo semitransparente */
-    border: 2px solid #f55; /* Borde rojo claro */
+    border: 2px solid #f55;
     color: #fff;
     font-size: 1em;
     font-weight: bold;
@@ -179,51 +215,63 @@ canvas {
 }
 
 #shoot-button:active {
-     background-color: rgba(255, 51, 51, 0.8);
+     background-color: rgba(255, 51, 51, 0.8); /* Rojo más brillante al presionar */
 }
 
-/* Ocultar controles de audio por defecto */
+/* Ocultar controles de audio */
 audio {
     display: none;
 }
 
 /* Media Query para Ocultar controles táctiles en pantallas grandes (Desktop) */
-/* We use a min-width to hide touch controls on larger screens */
 @media (min-width: 768px) {
     #touch-controls {
-        display: none; /* Hide touch controls on desktop */
+        display: none; /* Ocultar controles táctiles */
     }
     #instructions {
-        display: block !important; /* Ensure desktop instructions are visible */
+        display: block !important; /* Asegurar visibilidad instrucciones */
     }
      #game-wrapper {
-        margin-bottom: 20px; /* More space below game on desktop */
+        margin-bottom: 20px;
      }
      #game-container {
-        width: 800px; /* Restore original desktop width */
-        height: 600px; /* Restore original desktop height */
+        width: 800px; /* Ancho original desktop */
+        height: 600px; /* Alto original desktop */
         max-width: none;
         max-height: none;
-        aspect-ratio: auto; /* Remove aspect ratio on desktop */
+        aspect-ratio: auto; /* Quitar aspect ratio */
      }
-     h1 { font-size: 2em; margin-bottom: 20px; } /* Larger title on desktop */
-     #ui { font-size: 1.2em; top: 10px; left: 10px; right: 10px; } /* Larger UI on desktop */
-     #instructions { font-size: 0.9em; bottom: 10px;} /* Larger instructions on desktop */
-     #startButton { padding: 15px 30px; font-size: 1.5em; } /* Larger button on desktop */
+     h1 { font-size: 2em; margin-bottom: 20px; } /* Título más grande */
+
+     /* Ajuste responsive para la nueva UI principal */
+    #ui {
+        font-size: 1.2em; /* Un poco más grande */
+        padding: 12px 18px;
+        gap: 8px; /* Más espacio entre líneas */
+        top: 15px; /* Más margen superior */
+        left: 15px; /* Más margen izquierdo */
+    }
+
+     #instructions { font-size: 0.9em; bottom: 10px;} /* Instrucciones más grandes */
+     #startButton { padding: 15px 30px; font-size: 1.5em; } /* Botón más grande */
 }
 
-
-/* Media Query for very small screens if needed */
+/* Media Query para pantallas muy pequeñas */
 @media (max-width: 360px) {
     h1 { font-size: 1.3em; }
-    #ui { font-size: 0.8em; }
+    /* Ajustar UI principal en pantallas pequeñas */
+    #ui {
+        font-size: 0.9em; /* Reducir un poco */
+        padding: 8px 10px;
+        gap: 4px;
+    }
     #instructions { font-size: 0.6em; }
     #dpad {
          grid-template-columns: 50px 50px 50px;
-         grid-template-rows: 50px 50px; /* Adjusted rows */
+         grid-template-rows: 50px 50px;
     }
     .dpad-button {
-        font-size: 1.5em; /* Slightly smaller icons */
+        font-size: 1.5em; /* Iconos dpad más pequeños */
     }
     #shoot-button {
         width: 80px;
