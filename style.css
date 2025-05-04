@@ -27,15 +27,29 @@ body {
     margin-bottom: 10px; /* Espacio entre juego y controles */
 }
 
+/* NUEVO: Estilo para el encabezado (título + UI) */
+.game-header {
+    display: flex; /* Coloca título y UI en fila */
+    align-items: center; /* Centra verticalmente el título y la UI */
+    justify-content: space-between; /* Espacio entre título y UI */
+    width: 95%; /* Ancho similar al game-container */
+    margin-bottom: 10px; /* Espacio antes del canvas */
+    padding: 0 5px; /* Pequeño padding lateral */
+    box-sizing: border-box;
+}
+
+
 h1 {
     color: #0f0; /* Color verde neón */
     text-shadow: 0 0 5px #0f0;
-    margin: 10px 0;
-    font-size: 1.5em; /* Más pequeño en móvil */
+    margin: 0; /* Quitamos margen vertical por defecto */
+    font-size: 1.3em; /* Ajustar tamaño si es necesario */
+    text-align: left; /* Alinear a la izquierda */
+    flex-grow: 1; /* Permite que el título ocupe espacio */
 }
 
 #game-container {
-    position: relative; /* Para posicionar UI y botón */
+    position: relative; /* Para posicionar botón e instrucciones dentro */
     border: 2px solid #0f0; /* Borde neón */
     box-shadow: 0 0 10px #0f0;
     width: 95%; /* Ocupa casi todo el ancho del wrapper */
@@ -51,32 +65,32 @@ canvas {
     height: 100%; /* Ocupa toda la altura del contenedor */
 }
 
-/* --- ESTILOS UI MEJORADOS (VIDA, PUNTAJE, NIVEL) --- */
+/* --- ESTILOS UI MODIFICADOS (VIDA, PUNTAJE, NIVEL) --- */
 #ui {
-    position: absolute;
-    top: 10px;
-    left: 10px;
+    /* REMOVIDO: position: absolute; top: 10px; left: 10px; */
     background: linear-gradient(135deg, rgba(20, 30, 40, 0.85), rgba(40, 50, 60, 0.75)); /* Fondo gradiente oscuro */
     color: #fff;
-    padding: 10px 15px;
+    padding: 8px 12px; /* Ajustar padding si es necesario */
     border-radius: 5px; /* Bordes ligeramente redondeados */
     border: 1px solid rgba(100, 150, 200, 0.6); /* Borde azulado sutil */
     box-shadow: 0 0 8px rgba(100, 150, 255, 0.4), /* Sombra exterior azulada */
                 inset 0 0 5px rgba(0, 0, 0, 0.3); /* Sombra interior ligera */
     font-family: 'Courier New', Courier, monospace; /* Fuente monoespaciada tipo consola */
-    font-size: 1.1em; /* Tamaño base */
+    font-size: 0.9em; /* Ajustar tamaño base */
     display: flex;
-    flex-direction: column;
-    gap: 6px; /* Espacio entre líneas */
-    z-index: 10; /* Asegurar que esté por encima del canvas */
+    flex-direction: column; /* Mantiene la disposición vertical interna */
+    gap: 4px; /* Espacio entre líneas */
+    /* REMOVIDO: z-index: 10; */
     pointer-events: none; /* Permite hacer clic a través de la UI */
     text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.8); /* Sombra más definida para legibilidad */
+    white-space: nowrap; /* Evitar que el texto se parta */
+    flex-shrink: 0; /* Evita que la UI se encoja */
 }
+
 
 #ui div {
     margin: 0;
     padding: 0;
-    white-space: nowrap; /* Evitar que el texto se parta */
 }
 
 #score::before { /* Icono (texto) antes del puntaje */
@@ -110,7 +124,7 @@ canvas {
     font-weight: bold;
     color: #aaaaff; /* Azul/violeta pálido */
 }
-/* --- FIN ESTILOS UI MEJORADOS --- */
+/* --- FIN ESTILOS UI MODIFICADOS --- */
 
 
 /* Botón de Inicio */
@@ -135,7 +149,7 @@ canvas {
     background-color: #0c0;
 }
 
-/* Instrucciones */
+/* Instrucciones (permanecen dentro del game-container) */
 #instructions {
     position: absolute;
     bottom: 5px; /* Más cerca del borde */
@@ -233,7 +247,16 @@ audio {
     }
      #game-wrapper {
         margin-bottom: 20px;
+        max-width: 800px; /* Ajustar max-width para desktop */
      }
+     /* Ajustar header para desktop */
+    .game-header {
+        width: 100%; /* Ocupar todo el ancho del wrapper */
+        padding: 0; /* Reset padding */
+        justify-content: flex-start; /* Alinear elementos al inicio */
+        gap: 20px; /* Espacio entre título y UI */
+    }
+
      #game-container {
         width: 800px; /* Ancho original desktop */
         height: 600px; /* Alto original desktop */
@@ -241,15 +264,14 @@ audio {
         max-height: none;
         aspect-ratio: auto; /* Quitar aspect ratio */
      }
-     h1 { font-size: 2em; margin-bottom: 20px; } /* Título más grande */
+     h1 { font-size: 2em; margin-bottom: 0; } /* Título más grande, sin margen inferior */
 
-     /* Ajuste responsive para la nueva UI principal */
+     /* Ajuste responsive para la nueva UI principal en desktop */
     #ui {
-        font-size: 1.2em; /* Un poco más grande */
-        padding: 12px 18px;
-        gap: 8px; /* Más espacio entre líneas */
-        top: 15px; /* Más margen superior */
-        left: 15px; /* Más margen izquierdo */
+        font-size: 1.1em; /* Un poco más grande */
+        padding: 10px 15px;
+        gap: 6px; /* Más espacio entre líneas */
+        /* No necesita top/left porque está en el flujo normal */
     }
 
      #instructions { font-size: 0.9em; bottom: 10px;} /* Instrucciones más grandes */
@@ -258,12 +280,18 @@ audio {
 
 /* Media Query para pantallas muy pequeñas */
 @media (max-width: 360px) {
-    h1 { font-size: 1.3em; }
+    .game-header {
+        flex-direction: column; /* Apilar título y UI */
+        align-items: flex-start; /* Alinear a la izquierda */
+        gap: 5px; /* Espacio entre título y UI */
+        margin-bottom: 5px;
+    }
+    h1 { font-size: 1.2em; }
     /* Ajustar UI principal en pantallas pequeñas */
     #ui {
-        font-size: 0.9em; /* Reducir un poco */
-        padding: 8px 10px;
-        gap: 4px;
+        font-size: 0.8em; /* Reducir un poco más */
+        padding: 6px 8px;
+        gap: 3px;
     }
     #instructions { font-size: 0.6em; }
     #dpad {
