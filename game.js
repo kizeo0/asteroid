@@ -75,13 +75,13 @@ const INITIAL_LIVES = 3; const INVINCIBILITY_DURATION = 3500; const MAX_ZOMS_PER
 const PARRY_DURATION = 15; const PARRY_COOLDOWN_TIME = 0;
 const GRENADE_COOLDOWN = 420;
 const GRENADE_SPEED = 4;
-const GRENADE_SIZE = 75;
+const GRENADE_SIZE = 87;
 const GRENADE_DAMAGE = 3;
 // Config Jefes
-const BOSS_BASE_SIZE = 160; const BOSS_BASE_HEALTH = 12; const BOSS_LASER_SPEED = 4.5;
+const BOSS_BASE_SIZE = 200; const BOSS_BASE_HEALTH = 12; const BOSS_LASER_SPEED = 4.5;
 const BOSS_SHOOT_INTERVAL_BASE = 180; const BOSS_SOUND_INTERVAL = 240;
 const BOSS_POINTS_DEFEAT_BASE = 100; const BOSS_KILL_THRESHOLD = 10;
-const COBRA_SIZE = 180; const COBRA_HEALTH = BOSS_BASE_HEALTH * 2;
+const COBRA_SIZE = 200; const COBRA_HEALTH = BOSS_BASE_HEALTH * 2;
 const COBRA_SHOOT_INTERVAL = 120;
 const COBRA_PROJECTILE_SPEED = 5;
 const COBRA_ENTRY_SPEED = 0.5;
@@ -235,7 +235,7 @@ function spawnCobraBoss() {
     const cobraHealth = COBRA_HEALTH * difficultyMultiplier;
     boss = { x: canvas.width + COBRA_SIZE, y: canvas.height / 2, width: COBRA_SIZE, height: COBRA_SIZE, vx: -COBRA_ENTRY_SPEED, vy: 0, health: cobraHealth, maxHealth: cobraHealth, image: cobraImg, shootCooldown: COBRA_SHOOT_INTERVAL * 2, shootInterval: COBRA_SHOOT_INTERVAL, state: 'entering', hitTimer: 0, type: 'cobra' }; 
 }
-function cobraShoot() { if (!boss || boss.state !== 'fighting') return; const projectile = { x: boss.x - boss.width / 2, y: boss.y, vx: -COBRA_PROJECTILE_SPEED, width: 80, height: 60, image: balaCobraImg }; cobraProjectiles.push(projectile); const randomSound = cobraSounds[Math.floor(Math.random() * cobraSounds.length)]; playSound(randomSound); }
+function cobraShoot() { if (!boss || boss.state !== 'fighting') return; const projectile = { x: boss.x - boss.width / 2, y: boss.y, vx: -COBRA_PROJECTILE_SPEED, width: 100, height: 80, image: balaCobraImg }; cobraProjectiles.push(projectile); const randomSound = cobraSounds[Math.floor(Math.random() * cobraSounds.length)]; playSound(randomSound); }
 function updateCobraProjectiles() { for (let i = cobraProjectiles.length - 1; i >= 0; i--) { const p = cobraProjectiles[i]; p.x += p.vx; if (p.x + p.width < 0) { cobraProjectiles.splice(i, 1); } } }
 function updateBoss() { 
     if (!boss) return; 
