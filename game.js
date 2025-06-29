@@ -23,7 +23,6 @@ const musicVolumeSlider = document.getElementById('music-volume-slider');
 const sfxVolumeSlider = document.getElementById('sfx-volume-slider');
 const musicVolumeLabel = document.getElementById('music-volume-label');
 const sfxVolumeLabel = document.getElementById('sfx-volume-label');
-// MODIFICADO: Añadida referencia al título del modal
 const settingsTitle = document.getElementById('settings-title');
 
 // --- Referencias a Elementos del Menú de Desarrollador ---
@@ -66,6 +65,8 @@ const bgMadelineImg = new Image(); bgMadelineImg.src = 'madeline/fondo_madeline.
 const cobraImg = new Image(); cobraImg.src = 'madeline/cobra.png';
 const balaCobraImg = new Image(); balaCobraImg.src = 'madeline/balacobra.png';
 const grenadeImg = new Image(); grenadeImg.src = 'madeline/river.png';
+const lootBoxImg = new Image(); lootBoxImg.src = 'caja.png';
+const lootBoxOpenImg = new Image(); lootBoxOpenImg.src = 'cajaabierta.png';
 
 
 // --- Sonidos ---
@@ -82,6 +83,7 @@ const transitionVideo = document.getElementById('transitionVideo');
 const madelineMusic = document.getElementById('madelineMusic');
 const cobraSounds = [ document.getElementById('cobraSound1'), document.getElementById('cobraSound2'), document.getElementById('cobraSound3') ];
 const grenadeSound = document.getElementById('grenadeSound');
+const cajaAbiertaSound = document.getElementById('cajaAbiertaSound');
 
 
 // --- Configuración del Juego ---
@@ -107,6 +109,8 @@ const COBRA_SHOOT_INTERVAL = 120;
 const COBRA_PROJECTILE_SPEED = 5;
 const COBRA_ENTRY_SPEED = 0.5;
 const COBRA_VERTICAL_SPEED = 1.5;
+const LOOT_BOX_COST = 50;
+const LOOT_BOX_PROXIMITY = 120;
 
 // --- Variables de Estado del Juego ---
 let score = 0; let level = 1; let lives = INITIAL_LIVES;
@@ -116,7 +120,6 @@ let isPlayerLocked = false;
 let animationFrameId; let enemySpawnCounter = 0;
 let enemySpawnRate = ENEMY_SPAWN_RATE_INITIAL; let enemyKillCount = 0;
 let zomsSpawnedThisLevel = 0; 
-// MODIFICADO: Volumen de música por defecto a 0.7 (70%)
 let musicVolume = 0.7; 
 let sfxVolume = 0.5;
 let player = {}; let lasers = []; let enemies = []; let zomEnemies = [];
@@ -125,6 +128,7 @@ let cobraProjectiles = [];
 let grenades = [];
 let gamePhase = 'momo';
 let isGodMode = false;
+let lootBox = null;
 
 
 // --- LÓGICA DE AJUSTES Y SONIDO ---
@@ -133,25 +137,19 @@ function setSfxVolume(level, fromSlider = false) { sfxVolume = level; if (fromSl
 function playSound(sound) { if (!sound) return; const clone = sound.cloneNode(); clone.volume = sfxVolume; clone.play().catch(e => { if (!e.message.includes("user interaction")) { console.warn(`Error de sonido: ${e.message}`); } }); }
 function loadSettings() { const savedMusicVol = localStorage.getItem('musicVolume'); const savedSfxVol = localStorage.getItem('sfxVolume'); if (savedMusicVol !== null) { const vol = parseFloat(savedMusicVol); setMusicVolume(vol); musicVolumeSlider.value = vol * 100; musicVolumeLabel.textContent = Math.round(vol * 100); } else { setMusicVolume(musicVolume); musicVolumeSlider.value = musicVolume * 100; musicVolumeLabel.textContent = Math.round(musicVolume * 100); } if (savedSfxVol !== null) { const vol = parseFloat(savedSfxVol); setSfxVolume(vol); sfxVolumeSlider.value = vol * 100; sfxVolumeLabel.textContent = Math.round(vol * 100); } else { setSfxVolume(sfxVolume); sfxVolumeSlider.value = sfxVolume * 100; sfxVolumeLabel.textContent = Math.round(sfxVolume * 100); } }
 
-// --- LÓGICA DE PAUSA (MODIFICADA) ---
+// --- LÓGICA DE PAUSA ---
 function togglePause(forcePause) {
     if (!gameRunning && !forcePause) return;
-    
     isPaused = forcePause !== undefined ? forcePause : !isPaused;
-
     if (isPaused) {
         cancelAnimationFrame(animationFrameId);
         if (boss && boss.type === 'momo') { bossMusic.pause(); }
         else if (gamePhase === 'momo') { bgMusic.pause(); }
         else { madelineMusic.pause(); }
-        
-        // Muestra el modal de ajustes como pantalla de pausa
         settingsTitle.textContent = 'Pausa';
         closeSettingsButton.textContent = 'Reanudar Juego';
         settingsModal.style.display = 'flex';
-
     } else {
-        // Oculta el modal y reanuda el juego
         settingsModal.style.display = 'none';
         if (boss && boss.type === 'momo') { bossMusic.play(); }
         else if (gamePhase === 'momo') { bgMusic.play(); }
@@ -159,8 +157,6 @@ function togglePause(forcePause) {
         animationFrameId = requestAnimationFrame(gameLoop);
     }
 }
-// La función drawPauseScreen ya no es necesaria aquí, pero la dejamos por si se usa en otro lado.
-function drawPauseScreen() { ctx.fillStyle = "rgba(0, 0, 0, 0.7)"; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.fillStyle = "white"; ctx.font = "bold 50px 'Courier New', monospace"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.shadowColor = "#0f0"; ctx.shadowBlur = 15; ctx.fillText("PAUSA", canvas.width / 2, canvas.height / 2); ctx.shadowBlur = 0; ctx.textAlign = "start"; ctx.textBaseline = "alphabetic"; }
 
 // --- LÓGICA DEL MENÚ DE DESARROLLADOR ---
 function toggleDevMenu() {
@@ -200,29 +196,28 @@ function handleTouchEnd(e, keyCode) { e.preventDefault(); keys[keyCode] = false;
 function wrapAround(obj) { const w = canvas.width, h = canvas.height; const hw = obj.width / 2, hh = obj.height / 2; if (obj.x < -hw) obj.x = w + hw; if (obj.x > w + hw) obj.x = -hw; if (obj.y < -hh) obj.y = h + hh; if (obj.y > h + hh) obj.y = -hh; }
 
 function updatePlayer() {
+    // --- MOVIMIENTO ---
     player.rotation = keys['ArrowLeft'] && !isPlayerLocked ? -PLAYER_TURN_SPEED : (keys['ArrowRight'] && !isPlayerLocked ? PLAYER_TURN_SPEED : 0);
     player.angle += player.rotation;
-    
     player.thrusting = keys['ArrowUp'] && !isPlayerLocked;
-    
     if (player.thrusting) { 
         player.vx += Math.cos(player.angle) * PLAYER_THRUST; 
         player.vy += Math.sin(player.angle) * PLAYER_THRUST; 
     }
-
     player.vx *= FRICTION; 
     player.vy *= FRICTION;
     player.x += player.vx; 
     player.y += player.vy;
     wrapAround(player);
-    
+
+    // --- DISPARO ---
     if (player.shootCooldown > 0) player.shootCooldown--;
-    
     if (keys['Space'] && player.shootCooldown <= 0 && !player.parryActive && !isPlayerLocked) { 
         shootLaser(); 
         player.shootCooldown = player.currentFireRate; 
     }
-    
+
+    // --- INVENCIBILIDAD ---
     if (player.invincible) { 
         player.invincibilityTimer -= 1000 / 60; 
         if (player.invincibilityTimer <= 0) { 
@@ -230,25 +225,42 @@ function updatePlayer() {
         } 
     }
 
-    if (gamePhase === 'madeline') {
-        if (player.grenadeCooldown > 0) player.grenadeCooldown--;
-        if (keys['KeyZ'] && player.grenadeCooldown <= 0 && !isPlayerLocked) {
-            shootGrenade();
+    // --- GESTIÓN DE HABILIDADES (TECLA 'Z') ---
+    if (player.parryTimer > 0) {
+        player.parryTimer--;
+    } else if (player.parryActive) {
+        player.parryActive = false;
+    }
+    if (player.parryCooldown > 0) player.parryCooldown--;
+    if (player.grenadeCooldown > 0) player.grenadeCooldown--;
+    
+    if (keys['KeyZ'] && !isPlayerLocked) {
+        let actionConsumed = false; 
+
+        if (lootBox && lootBox.isPlayerNear && !lootBox.isOpen && gamePhase === 'momo') {
+            openLootBox();
+            actionConsumed = true;
         }
-    } else {
-        if (player.parryCooldown > 0) player.parryCooldown--;
-        if (player.parryTimer > 0) { 
-            player.parryTimer--; 
-        } else if (player.parryActive) { 
-            player.parryActive = false; 
+        
+        if (!actionConsumed && gamePhase === 'madeline') {
+            if (player.grenadeCooldown <= 0) {
+                shootGrenade();
+                actionConsumed = true;
+            }
+        } 
+        else if (!actionConsumed && gamePhase === 'momo') {
+            if (player.parryCooldown <= 0) {
+                player.parryActive = true;
+                player.parryTimer = PARRY_DURATION;
+                player.parryCooldown = PARRY_COOLDOWN_TIME;
+                actionConsumed = true;
+            }
         }
-        if (keys['KeyZ'] && player.parryCooldown <= 0 && !isPlayerLocked) { 
-            player.parryActive = true; 
-            player.parryTimer = PARRY_DURATION; 
-            player.parryCooldown = PARRY_COOLDOWN_TIME; 
-        }
+
+        keys['KeyZ'] = false; 
     }
 }
+
 function shootLaser() { const angle = player.angle; const originDist = player.width / 2; const startX = player.x + Math.cos(angle) * originDist; const startY = player.y + Math.sin(angle) * originDist; lasers.push({ x: startX, y: startY, angle: angle, vx: Math.cos(angle) * LASER_SPEED + player.vx * 0.4, vy: Math.sin(angle) * LASER_SPEED + player.vy * 0.4, width: 5, height: 10 }); playSound(shotSound); }
 function updateLasers() { for (let i = lasers.length - 1; i >= 0; i--) { const l = lasers[i]; l.x += l.vx; l.y += l.vy; if (l.x < 0 || l.x > canvas.width || l.y < 0 || l.y > canvas.height) { lasers.splice(i, 1); } } }
 function shootGrenade() {
@@ -378,7 +390,20 @@ function updateBoss() {
 }
 function bossShoot() { if (!boss || boss.state !== 'fighting') return; const playerEffectiveY = player.y - player.height / 2; const bossFireY = boss.y + boss.height * 0.4; const angleToPlayer = Math.atan2(playerEffectiveY - bossFireY, player.x - boss.x); const baseSpeed = BOSS_LASER_SPEED + boss.level * 0.1; bossLasers.push({ x: boss.x, y: bossFireY, angle: angleToPlayer, vx: Math.cos(angleToPlayer) * baseSpeed, vy: Math.sin(angleToPlayer) * baseSpeed, width: 8, height: 15, color: 'yellow' }); if (boss.level >= 2) { const spreadAngle = Math.PI / 15; for (let i = -1; i <= 1; i += 2) { const currentAngle = angleToPlayer + i * spreadAngle; bossLasers.push({ x: boss.x, y: bossFireY, angle: currentAngle, vx: Math.cos(currentAngle) * baseSpeed * 0.9, vy: Math.sin(currentAngle) * baseSpeed * 0.9, width: 7, height: 13, color: '#FFA500' }); } } if (boss.level >= 4) { const shoulderOffset = boss.width * 0.3; const sideAngleOffset = Math.PI / 10; bossLasers.push({ x: boss.x - shoulderOffset, y: boss.y + boss.height * 0.2, angle: angleToPlayer + sideAngleOffset, vx: Math.cos(angleToPlayer + sideAngleOffset) * baseSpeed * 0.8, vy: Math.sin(angleToPlayer + sideAngleOffset) * baseSpeed * 0.8, width: 6, height: 12, color: 'pink' }); bossLasers.push({ x: boss.x + shoulderOffset, y: boss.y + boss.height * 0.2, angle: angleToPlayer - sideAngleOffset, vx: Math.cos(angleToPlayer - sideAngleOffset) * baseSpeed * 0.8, vy: Math.sin(angleToPlayer - sideAngleOffset) * baseSpeed * 0.8, width: 6, height: 12, color: 'pink' }); } }
 function updateBossLasers() { for (let i = bossLasers.length - 1; i >= 0; i--) { const l = bossLasers[i]; l.x += l.vx; l.y += l.vy; if (l.x < -l.width * 2 || l.x > canvas.width + l.width * 2 || l.y < -l.height * 2 || l.y > canvas.height + l.height * 2) { bossLasers.splice(i, 1); } } }
-function bossDefeated() { boss = null; bossLasers = []; bossMusic.pause(); bgMusic.currentTime = 0; bgMusic.play().catch(e => console.warn("Música normal necesita interacción")); enemySpawnRate = Math.max(30, ENEMY_SPAWN_RATE_INITIAL * Math.pow(ENEMY_SPAWN_RATE_INCREASE, level - 1)); enemySpawnCounter = enemySpawnRate; spawnPowerUp(); if (zomsSpawnedThisLevel < MAX_ZOMS_PER_LEVEL && gamePhase === 'momo') { scheduleLevelZoms(); } }
+function bossDefeated() {
+    boss = null;
+    bossLasers = [];
+    bossMusic.pause();
+    bgMusic.currentTime = 0;
+    bgMusic.play().catch(e => console.warn("Música normal necesita interacción"));
+    enemySpawnRate = Math.max(30, ENEMY_SPAWN_RATE_INITIAL * Math.pow(ENEMY_SPAWN_RATE_INCREASE, level - 1));
+    enemySpawnCounter = enemySpawnRate;
+    spawnPowerUp();
+    if (zomsSpawnedThisLevel < MAX_ZOMS_PER_LEVEL && gamePhase === 'momo') {
+        scheduleLevelZoms();
+    }
+    initializeLootBox();
+}
 
 // --- FASES Y TRANSICIONES ---
 function startMadelineTransition() {
@@ -395,6 +420,7 @@ function startMadelineTransition() {
         gameTitle.textContent = "Mundo Interior"; 
         updateAbilityButtonUI();
         enemies = []; zomEnemies = []; powerUps = []; lasers = []; bossLasers = []; boss = null;
+        initializeLootBox();
         player.x = canvas.width / 2; player.y = canvas.height / 2; player.vx = 0; player.vy = 0;
         setMusicVolume(musicVolume); 
         madelineMusic.currentTime = 0;
@@ -531,8 +557,15 @@ function drawBossUI() { if (boss && (boss.state === 'fighting' || boss.state ===
 function drawBoss() { if (!boss) return; ctx.save(); ctx.translate(boss.x, boss.y); let activeFilter = 'none'; if (boss.hitTimer > 0) { activeFilter = 'brightness(2.5)'; } ctx.filter = activeFilter; let dyingAlpha = 1.0; if (boss.state === 'dying') { if (Math.floor(Date.now() / 80) % 2 === 0) { dyingAlpha = 0.3; } } ctx.globalAlpha = dyingAlpha; try { if (boss.image && boss.image.complete && boss.image.naturalWidth > 0) { ctx.drawImage(boss.image, -boss.width / 2, -boss.height / 2, boss.width, boss.height); } else { ctx.fillStyle = "purple"; ctx.fillRect(-boss.width / 2, -boss.height / 2, boss.width, boss.height); } } catch (err) { console.error("Error dibujando jefe:", err); } ctx.filter = 'none'; ctx.globalAlpha = 1.0; ctx.restore(); }
 function drawBossLasers() { bossLasers.forEach(l => { ctx.save(); ctx.translate(l.x, l.y); ctx.rotate(l.angle + Math.PI / 2); ctx.fillStyle = l.color || "yellow"; ctx.fillRect(-l.width / 2, -l.height / 2, l.width, l.height); ctx.restore(); }); }
 function drawCobraProjectiles() { cobraProjectiles.forEach(p => { ctx.save(); ctx.translate(p.x, p.y); try { if (p.image && p.image.complete && p.image.naturalWidth > 0) { ctx.drawImage(p.image, -p.width / 2, -p.height / 2, p.width, p.height); } else { ctx.fillStyle = "magenta"; ctx.fillRect(-p.width/2, -p.height/2, p.width, p.height); } } catch(e) { console.error("Error dibujando bala de cobra", e); } ctx.restore(); }); }
+
 function updateAbilityButtonUI() {
     if (!parryButton) return;
+    if (lootBox && lootBox.isVisible && lootBox.isPlayerNear && !lootBox.isOpen) {
+        parryButton.textContent = 'ABRIR';
+        parryButton.style.opacity = score >= LOOT_BOX_COST ? '1' : '0.5';
+        parryButton.style.cursor = score >= LOOT_BOX_COST ? 'pointer' : 'not-allowed';
+        return; 
+    }
     if (gamePhase === 'madeline') {
         parryButton.textContent = 'GRANADA';
         if (player.grenadeCooldown > 0) {
@@ -542,9 +575,10 @@ function updateAbilityButtonUI() {
             parryButton.style.opacity = '1';
             parryButton.style.cursor = 'pointer';
         }
-    } else { 
+    } 
+    else { 
         parryButton.textContent = 'BARRERA';
-        if (player.parryCooldown > 0) {
+        if (player.parryCooldown > 0 || player.parryActive) {
             parryButton.style.opacity = '0.4';
             parryButton.style.cursor = 'not-allowed';
         } else {
@@ -558,22 +592,99 @@ function updateAbilityButtonUI() {
 // --- Bucle Principal y Gestión del Juego ---
 function gameLoop() {
     if (!gameRunning || isPaused) return;
-    updatePlayer(); updateLasers(); updateGrenades(); updateNormalEnemies(); updateZomEnemies(); updatePowerUps(); updateBoss(); updateBossLasers(); updateCobraProjectiles(); updateAbilityButtonUI();
+    updatePlayer(); updateLasers(); updateGrenades(); updateNormalEnemies(); updateZomEnemies(); updatePowerUps(); updateBoss(); updateBossLasers(); updateCobraProjectiles();
+    updateLootBox();
+    updateAbilityButtonUI();
     checkCollisions();
     if (gameRunning) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         try { const currentBg = gamePhase === 'momo' ? bgImg : bgMadelineImg; if (currentBg.complete && currentBg.naturalWidth > 0) { ctx.drawImage(currentBg, 0, 0, canvas.width, canvas.height); } else { ctx.fillStyle = "#000011"; ctx.fillRect(0, 0, canvas.width, canvas.height); } } catch (e) { console.error("Error dibujando fondo:", e); ctx.fillStyle = "#000011"; ctx.fillRect(0, 0, canvas.width, canvas.height); }
         drawNormalEnemies(); drawZomEnemies(); drawPowerUps(); drawLasers(); drawGrenades();
-        drawBossLasers(); drawCobraProjectiles(); drawBoss(); drawPlayer(); drawParryBarrier(); drawBossUI();
+        drawBossLasers(); drawCobraProjectiles(); drawBoss();
+        drawLootBox();
+        drawPlayer(); drawParryBarrier(); drawBossUI();
         animationFrameId = requestAnimationFrame(gameLoop);
     }
 }
+
+// --- FUNCIONES PARA LA CAJA DE BOTÍN ---
+function initializeLootBox() {
+    if (gamePhase !== 'momo') {
+        lootBox = null;
+        return;
+    }
+    const boxSize = 120;
+    lootBox = {
+        x: canvas.width / 2,
+        y: boxSize / 2, 
+        width: boxSize,
+        height: boxSize,
+        image: lootBoxImg,
+        isVisible: true,
+        isOpen: false,
+        isPlayerNear: false,
+    };
+}
+
+function updateLootBox() {
+    if (!lootBox) return;
+    lootBox.isVisible = !boss;
+    if (!lootBox.isVisible) {
+        lootBox.isPlayerNear = false;
+        return;
+    }
+    const dx = player.x - lootBox.x;
+    const dy = player.y - lootBox.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    lootBox.isPlayerNear = distance < LOOT_BOX_PROXIMITY;
+}
+
+function drawLootBox() {
+    if (lootBox && lootBox.isVisible) {
+        ctx.save();
+        try {
+            ctx.drawImage(lootBox.image, lootBox.x - lootBox.width / 2, lootBox.y - lootBox.height / 2, lootBox.width, lootBox.height);
+        } catch (e) {
+            console.error("Error al dibujar la caja de botín", e);
+        }
+        ctx.restore();
+    }
+}
+
+// MODIFICADO: Lógica para cerrar la caja después de que el sonido termine
+function openLootBox() {
+    if (!lootBox || lootBox.isOpen || score < LOOT_BOX_COST) {
+        return;
+    }
+
+    score -= LOOT_BOX_COST;
+    updateScoreAndLevel();
+
+    lootBox.isOpen = true; // Marca como abierta para evitar interacciones múltiples
+    lootBox.image = lootBoxOpenImg;
+    
+    // Reproduce el sonido y añade un listener para cuando termine
+    const sound = cajaAbiertaSound.cloneNode();
+    sound.volume = sfxVolume;
+    sound.play();
+
+    // Cuando el sonido termine, cierra la caja
+    sound.addEventListener('ended', () => {
+        if (lootBox) {
+            lootBox.isOpen = false;
+            lootBox.image = lootBoxImg;
+        }
+    }, { once: true }); // El listener se ejecuta solo una vez y luego se elimina
+
+    console.log("¡Caja abierta!");
+    // Aquí se añadirá la lógica para obtener armas en el futuro
+}
+
 
 function startGame() {
     if (gameRunning && !isPaused) return;
     isPaused = false;
     gameRunning = true;
-    
     isPlayerLocked = false;
 
     startButton.style.display = 'none'; instructionsDiv.style.display = 'none';
@@ -583,7 +694,6 @@ function startGame() {
     gamePhase = 'momo';
     document.body.classList.remove('madeline-theme');
     gameTitle.textContent = `Asteroides Infinito (Ciclo ${gameCycle})`;
-    updateAbilityButtonUI();
     
     if (gameCycle === 1) {
         score = 0;
@@ -604,6 +714,8 @@ function startGame() {
     cobraProjectiles = []; 
     grenades = [];
 
+    initializeLootBox();
+
     player = {
         x: canvas.width / 2, y: canvas.height / 2, width: PLAYER_SIZE, height: PLAYER_SIZE,
         angle: -Math.PI / 2, vx: 0, vy: 0, rotation: 0, thrusting: false,
@@ -613,6 +725,7 @@ function startGame() {
         grenadeCooldown: 0
     };
     updateScoreAndLevel();
+    updateAbilityButtonUI();
 
     bossMusic.pause(); madelineMusic.pause();
     bossMusic.currentTime = 0; madelineMusic.currentTime = 0;
@@ -657,22 +770,20 @@ function showInitialScreen() {
     settingsButton.style.display = 'block'; pauseButton.style.display = 'none';
 }
 
-// --- EVENT LISTENERS E INICIALIZACIÓN (MODIFICADOS) ---
+// --- EVENT LISTENERS E INICIALIZACIÓN ---
 musicVolumeSlider.addEventListener('input', (e) => { const value = e.target.value; musicVolumeLabel.textContent = value; setMusicVolume(value / 100, true); });
 sfxVolumeSlider.addEventListener('input', (e) => { const value = e.target.value; sfxVolumeLabel.textContent = value; setSfxVolume(value / 100, true); });
 
 settingsButton.addEventListener('click', () => {
-    // Cuando se abre desde el menú principal, se asegura que el título sea el correcto
     settingsTitle.textContent = 'Ajustes de Sonido';
     closeSettingsButton.textContent = 'Cerrar';
     settingsModal.style.display = 'flex';
 });
 
 closeSettingsButton.addEventListener('click', () => {
-    // Esta función ahora también reanuda el juego si estaba en pausa
     settingsModal.style.display = 'none';
     if (gameRunning && isPaused) {
-        togglePause(false); // Reanuda el juego
+        togglePause(false); 
     }
 });
 
