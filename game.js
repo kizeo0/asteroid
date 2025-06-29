@@ -43,10 +43,13 @@ const bossImg = new Image(); bossImg.src = 'momo.png';
 const zomImg = new Image(); zomImg.src = 'zom.png';
 
 // --- Recursos para la Fase "Madeline" ---
-// MODIFICADO: Se elimina la imagen del jugador de Madeline, se mantiene solo el fondo.
-const bgMadelineImg = new Image(); bgMadelineImg.src = 'madeline/fondo_madeline.png';   // Reemplaza con tu imagen
+const bgMadelineImg = new Image(); bgMadelineImg.src = 'madeline/fondo_madeline.png';
+// NUEVO: Recursos del jefe Cobra
+const cobraImg = new Image(); cobraImg.src = 'madeline/cobra.png';
+const balaCobraImg = new Image(); balaCobraImg.src = 'madeline/balacobra.png';
 
-// Sonidos (IDs deben coincidir con el HTML)
+
+// --- Sonidos ---
 const bgMusic = document.getElementById('bgMusic');
 const shotSound = document.getElementById('shotSound');
 const killSound = document.getElementById('killSound');
@@ -56,9 +59,14 @@ const momoSound2 = document.getElementById('momo2.mp3');
 const bossMusic = document.getElementById('bossMusic');
 const kapumSound = document.getElementById('kapumSound');
 const zomSound = document.getElementById('zomSound');
-// Video y música de la nueva fase
 const transitionVideo = document.getElementById('transitionVideo');
 const madelineMusic = document.getElementById('madelineMusic');
+// NUEVO: Array de sonidos para el ataque de Cobra
+const cobraSounds = [
+    document.getElementById('cobraSound1'),
+    document.getElementById('cobraSound2'),
+    document.getElementById('cobraSound3')
+];
 
 
 // --- Configuración del Juego ---
@@ -70,9 +78,16 @@ const POWERUP_DURATION = 8000; const RARE_POWERUP_CHANCE_MOD = 0.4;
 const ENEMY_SPAWN_RATE_INITIAL = 180; const ENEMY_SPAWN_RATE_INCREASE = 0.975;
 const INITIAL_LIVES = 3; const INVINCIBILITY_DURATION = 3500; const MAX_ZOMS_PER_LEVEL = 2;
 const PARRY_DURATION = 15; const PARRY_COOLDOWN_TIME = 0;
+// Config Jefes
 const BOSS_BASE_SIZE = 160; const BOSS_BASE_HEALTH = 12; const BOSS_LASER_SPEED = 4.5;
 const BOSS_SHOOT_INTERVAL_BASE = 180; const BOSS_SOUND_INTERVAL = 240;
 const BOSS_POINTS_DEFEAT_BASE = 100; const BOSS_KILL_THRESHOLD = 10;
+// NUEVO: Config del jefe Cobra
+const COBRA_SIZE = 180; const COBRA_HEALTH = BOSS_BASE_HEALTH * 2; // Vida de 2 Momos Nv1
+const COBRA_SHOOT_INTERVAL = 120; // 2 segundos (60 fps * 2)
+const COBRA_PROJECTILE_SPEED = 5;
+const COBRA_ENTRY_SPEED = 0.5;
+const COBRA_VERTICAL_SPEED = 1.5;
 
 // --- Variables de Estado del Juego ---
 let score = 0; let level = 1; let lives = INITIAL_LIVES;
@@ -82,9 +97,10 @@ let enemySpawnRate = ENEMY_SPAWN_RATE_INITIAL; let enemyKillCount = 0;
 let zomsSpawnedThisLevel = 0; let musicVolume = 0.2; let sfxVolume = 0.5;
 let player = {}; let lasers = []; let enemies = []; let zomEnemies = [];
 let powerUps = []; let keys = {}; let boss = null; let bossLasers = [];
-
-// Variable para controlar la fase del juego ('momo' o 'madeline')
+// NUEVO: Array para proyectiles de Cobra
+let cobraProjectiles = [];
 let gamePhase = 'momo';
+
 
 // --- LÓGICA DE AJUSTES Y SONIDO ---
 function setMusicVolume(level, fromSlider = false) {
@@ -132,36 +148,20 @@ function togglePause() {
         else madelineMusic.pause();
         drawPauseScreen();
     } else {
-        if (boss) bossMusic.play();
+        if (boss && boss.type === 'momo') bossMusic.play();
         else if (gamePhase === 'momo') bgMusic.play();
         else madelineMusic.play();
         animationFrameId = requestAnimationFrame(gameLoop);
     }
 }
-function drawPauseScreen() {
-    ctx.fillStyle = "rgba(0, 0, 0, 0.7)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "white"; ctx.font = "bold 50px 'Courier New', monospace"; ctx.textAlign = "center";
-    ctx.textBaseline = "middle"; ctx.shadowColor = "#0f0"; ctx.shadowBlur = 15;
-    ctx.fillText("PAUSA", canvas.width / 2, canvas.height / 2);
-    ctx.shadowBlur = 0; ctx.textAlign = "start"; ctx.textBaseline = "alphabetic";
-}
+function drawPauseScreen() { ctx.fillStyle = "rgba(0, 0, 0, 0.7)"; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.fillStyle = "white"; ctx.font = "bold 50px 'Courier New', monospace"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.shadowColor = "#0f0"; ctx.shadowBlur = 15; ctx.fillText("PAUSA", canvas.width / 2, canvas.height / 2); ctx.shadowBlur = 0; ctx.textAlign = "start"; ctx.textBaseline = "alphabetic"; }
 
 // --- LÓGICA PRINCIPAL DEL JUEGO ---
-document.addEventListener('keydown', (e) => {
-    if (e.code === 'KeyP') { togglePause(); }
-    keys[e.code] = true;
-    if (['ArrowUp', 'ArrowLeft', 'ArrowRight', 'Space', 'KeyZ'].includes(e.code)) { e.preventDefault(); }
-});
+document.addEventListener('keydown', (e) => { if (e.code === 'KeyP') { togglePause(); } keys[e.code] = true; if (['ArrowUp', 'ArrowLeft', 'ArrowRight', 'Space', 'KeyZ'].includes(e.code)) { e.preventDefault(); } });
 document.addEventListener('keyup', (e) => { if (keys[e.code] === true) { keys[e.code] = false; } });
 function handleTouchStart(e, keyCode) { e.preventDefault(); keys[keyCode] = true; }
 function handleTouchEnd(e, keyCode) { e.preventDefault(); keys[keyCode] = false; }
-[{el: dpadUp, key: 'ArrowUp'}, {el: dpadLeft, key: 'ArrowLeft'}, {el: dpadRight, key: 'ArrowRight'}, {el: shootButton, key: 'Space'}, {el: parryButton, key: 'KeyZ'}].forEach(item => {
-    item.el.addEventListener('touchstart', (e) => handleTouchStart(e, item.key), { passive: false });
-    item.el.addEventListener('touchend', (e) => handleTouchEnd(e, item.key), { passive: false });
-    item.el.addEventListener('mousedown', (e) => handleTouchStart(e, item.key), { passive: false });
-    item.el.addEventListener('mouseup', (e) => handleTouchEnd(e, item.key), { passive: false });
-    item.el.addEventListener('touchcancel', (e) => handleTouchEnd(e, item.key), { passive: false });
-});
+[{el: dpadUp, key: 'ArrowUp'}, {el: dpadLeft, key: 'ArrowLeft'}, {el: dpadRight, key: 'ArrowRight'}, {el: shootButton, key: 'Space'}, {el: parryButton, key: 'KeyZ'}].forEach(item => { item.el.addEventListener('touchstart', (e) => handleTouchStart(e, item.key), { passive: false }); item.el.addEventListener('touchend', (e) => handleTouchEnd(e, item.key), { passive: false }); item.el.addEventListener('mousedown', (e) => handleTouchStart(e, item.key), { passive: false }); item.el.addEventListener('mouseup', (e) => handleTouchEnd(e, item.key), { passive: false }); item.el.addEventListener('touchcancel', (e) => handleTouchEnd(e, item.key), { passive: false }); });
 
 function wrapAround(obj) { const w = canvas.width, h = canvas.height; const hw = obj.width / 2, hh = obj.height / 2; if (obj.x < -hw) obj.x = w + hw; if (obj.x > w + hw) obj.x = -hw; if (obj.y < -hh) obj.y = h + hh; if (obj.y > h + hh) obj.y = -hh; }
 function updatePlayer() { player.rotation = keys['ArrowLeft'] ? -PLAYER_TURN_SPEED : (keys['ArrowRight'] ? PLAYER_TURN_SPEED : 0); player.angle += player.rotation; player.thrusting = keys['ArrowUp']; if (player.thrusting) { player.vx += Math.cos(player.angle) * PLAYER_THRUST; player.vy += Math.sin(player.angle) * PLAYER_THRUST; } player.vx *= FRICTION; player.vy *= FRICTION; player.x += player.vx; player.y += player.vy; wrapAround(player); if (player.shootCooldown > 0) player.shootCooldown--; if (keys['Space'] && player.shootCooldown <= 0 && !player.parryActive) { shootLaser(); player.shootCooldown = player.currentFireRate; } if (player.invincible) { player.invincibilityTimer -= 1000 / 60; if (player.invincibilityTimer <= 0) { player.invincible = false; } } if (player.parryCooldown > 0) player.parryCooldown--; if (player.parryTimer > 0) { player.parryTimer--; } else if (player.parryActive) { player.parryActive = false; } if (keys['KeyZ'] && player.parryCooldown <= 0) { player.parryActive = true; player.parryTimer = PARRY_DURATION; player.parryCooldown = PARRY_COOLDOWN_TIME; } }
@@ -174,89 +174,62 @@ function updateNormalEnemies() { if (gamePhase !== 'momo') return; if (!boss || 
 function updateZomEnemies() { if (gamePhase !== 'momo') return; zomEnemies.forEach(e => { const dx = player.x - e.x; const dy = player.y - e.y; const angleToPlayer = Math.atan2(dy, dx); e.vx = Math.cos(angleToPlayer) * ZOM_SPEED; e.vy = Math.sin(angleToPlayer) * ZOM_SPEED; e.x += e.vx; e.y += e.vy; wrapAround(e); }); }
 function spawnPowerUp() { const padding = POWERUP_SIZE * 1.5; const x = padding + Math.random() * (canvas.width - 2 * padding); const y = padding + Math.random() * (canvas.height - 2 * padding); const type = Math.random() < RARE_POWERUP_CHANCE_MOD ? 'clear_screen' : 'fast_shot'; powerUps.push({ x: x, y: y, width: POWERUP_SIZE, height: POWERUP_SIZE, type: type, image: powerUpImages[type], creationTime: Date.now() }); }
 function updatePowerUps() { if (gamePhase === 'momo' && !boss && Math.random() < POWERUP_CHANCE && powerUps.length < 3) spawnPowerUp(); const now = Date.now(); for (let i = powerUps.length - 1; i >= 0; i--) { if (now - powerUps[i].creationTime > POWERUP_DURATION) { powerUps.splice(i, 1); } } }
-function spawnBoss(bossAppearanceLevel) { if (boss || gamePhase !== 'momo') return; console.log(`¡Aparece el JEFE (Encuentro N. ${bossAppearanceLevel})!`); enemies = []; lasers = []; powerUps = []; zomEnemies = []; zomsSpawnedThisLevel = MAX_ZOMS_PER_LEVEL; bgMusic.pause(); bossMusic.currentTime = 0; bossMusic.play().catch(e => console.warn("Música del jefe necesita interacción del usuario")); const health = BOSS_BASE_HEALTH + (bossAppearanceLevel - 1) * 8; const size = Math.min(canvas.width * 0.4, BOSS_BASE_SIZE + (bossAppearanceLevel - 1) * 5); const shootInterval = Math.max(45, BOSS_SHOOT_INTERVAL_BASE - (bossAppearanceLevel - 1) * 10); const bossSpeedX = 1.0 + (bossAppearanceLevel * 0.15); boss = { x: canvas.width / 2, y: -size, width: size, height: size, vx: bossSpeedX * (Math.random() < 0.5 ? 1 : -1), vy: 1.2, health: health, maxHealth: health, image: bossImg, shootCooldown: shootInterval * 1.5, shootInterval: shootInterval, soundCooldown: BOSS_SOUND_INTERVAL / 2, level: bossAppearanceLevel, state: 'entering', hitTimer: 0 }; }
-function updateBoss() { if (!boss) return; if (boss.hitTimer > 0) boss.hitTimer--; if (boss.state === 'entering') { boss.y += boss.vy; if (boss.y >= boss.height * 0.4) { boss.y = boss.height * 0.4; boss.vy = 0; boss.state = 'fighting'; } } else if (boss.state === 'fighting') { boss.x += boss.vx; const halfWidth = boss.width / 2; if (boss.x <= halfWidth) { boss.x = halfWidth; boss.vx = Math.abs(boss.vx); } else if (boss.x >= canvas.width - halfWidth) { boss.x = canvas.width - halfWidth; boss.vx = -Math.abs(boss.vx); } boss.shootCooldown--; if (boss.shootCooldown <= 0) { bossShoot(); boss.shootCooldown = boss.shootInterval; } boss.soundCooldown--; if (boss.soundCooldown <= 0) { const soundToPlay = Math.random() < 0.5 ? momoSound1 : momoSound2; playSound(soundToPlay); boss.soundCooldown = BOSS_SOUND_INTERVAL + (Math.random() - 0.5) * 60; } } else if (boss.state === 'leaving') { boss.y += boss.vy; if (boss.y < -boss.height * 1.5) { bossDefeated(); } } }
+
+// --- LÓGICA DE JEFES ---
+function spawnBoss(bossAppearanceLevel) { if (boss || gamePhase !== 'momo') return; console.log(`¡Aparece el JEFE (Encuentro N. ${bossAppearanceLevel})!`); enemies = []; lasers = []; powerUps = []; zomEnemies = []; zomsSpawnedThisLevel = MAX_ZOMS_PER_LEVEL; bgMusic.pause(); bossMusic.currentTime = 0; bossMusic.play().catch(e => console.warn("Música del jefe necesita interacción del usuario")); const health = BOSS_BASE_HEALTH + (bossAppearanceLevel - 1) * 8; const size = Math.min(canvas.width * 0.4, BOSS_BASE_SIZE + (bossAppearanceLevel - 1) * 5); const shootInterval = Math.max(45, BOSS_SHOOT_INTERVAL_BASE - (bossAppearanceLevel - 1) * 10); const bossSpeedX = 1.0 + (bossAppearanceLevel * 0.15); boss = { x: canvas.width / 2, y: -size, width: size, height: size, vx: bossSpeedX * (Math.random() < 0.5 ? 1 : -1), vy: 1.2, health: health, maxHealth: health, image: bossImg, shootCooldown: shootInterval * 1.5, shootInterval: shootInterval, soundCooldown: BOSS_SOUND_INTERVAL / 2, level: bossAppearanceLevel, state: 'entering', hitTimer: 0, type: 'momo' }; }
+// NUEVO: Función para generar al jefe Cobra
+function spawnCobraBoss() { if (boss) return; console.log("¡Aparece LA COBRA!"); boss = { x: canvas.width + COBRA_SIZE, y: canvas.height / 2, width: COBRA_SIZE, height: COBRA_SIZE, vx: -COBRA_ENTRY_SPEED, vy: 0, health: COBRA_HEALTH, maxHealth: COBRA_HEALTH, image: cobraImg, shootCooldown: COBRA_SHOOT_INTERVAL * 2, shootInterval: COBRA_SHOOT_INTERVAL, state: 'entering', hitTimer: 0, type: 'cobra' }; }
+// NUEVO: Función de disparo para Cobra
+function cobraShoot() { if (!boss || boss.state !== 'fighting') return; const projectile = { x: boss.x - boss.width / 2, y: boss.y, vx: -COBRA_PROJECTILE_SPEED, width: 60, height: 40, image: balaCobraImg }; cobraProjectiles.push(projectile); const randomSound = cobraSounds[Math.floor(Math.random() * cobraSounds.length)]; playSound(randomSound); }
+// NUEVO: Función para actualizar proyectiles de Cobra
+function updateCobraProjectiles() { for (let i = cobraProjectiles.length - 1; i >= 0; i--) { const p = cobraProjectiles[i]; p.x += p.vx; if (p.x + p.width < 0) { cobraProjectiles.splice(i, 1); } } }
+// MODIFICADO: updateBoss ahora maneja a ambos jefes
+function updateBoss() { if (!boss) return; if (boss.hitTimer > 0) boss.hitTimer--; if (boss.type === 'momo') { if (boss.state === 'entering') { boss.y += boss.vy; if (boss.y >= boss.height * 0.4) { boss.y = boss.height * 0.4; boss.vy = 0; boss.state = 'fighting'; } } else if (boss.state === 'fighting') { boss.x += boss.vx; const halfWidth = boss.width / 2; if (boss.x <= halfWidth) { boss.x = halfWidth; boss.vx = Math.abs(boss.vx); } else if (boss.x >= canvas.width - halfWidth) { boss.x = canvas.width - halfWidth; boss.vx = -Math.abs(boss.vx); } boss.shootCooldown--; if (boss.shootCooldown <= 0) { bossShoot(); boss.shootCooldown = boss.shootInterval; } boss.soundCooldown--; if (boss.soundCooldown <= 0) { const soundToPlay = Math.random() < 0.5 ? momoSound1 : momoSound2; playSound(soundToPlay); boss.soundCooldown = BOSS_SOUND_INTERVAL + (Math.random() - 0.5) * 60; } } else if (boss.state === 'leaving') { boss.y += boss.vy; if (boss.y < -boss.height * 1.5) { bossDefeated(); } } } else if (boss.type === 'cobra') { if (boss.state === 'entering') { boss.x += boss.vx; const targetX = canvas.width - boss.width / 2; if (boss.x <= targetX) { boss.x = targetX; boss.vx = 0; boss.vy = COBRA_VERTICAL_SPEED; boss.state = 'fighting'; } } else if (boss.state === 'fighting') { boss.y += boss.vy; if (boss.y - boss.height / 2 < 0 || boss.y + boss.height / 2 > canvas.height) { boss.vy *= -1; } boss.shootCooldown--; if (boss.shootCooldown <= 0) { cobraShoot(); boss.shootCooldown = boss.shootInterval; } } } }
 function bossShoot() { if (!boss || boss.state !== 'fighting') return; const playerEffectiveY = player.y - player.height / 2; const bossFireY = boss.y + boss.height * 0.4; const angleToPlayer = Math.atan2(playerEffectiveY - bossFireY, player.x - boss.x); const baseSpeed = BOSS_LASER_SPEED + boss.level * 0.1; bossLasers.push({ x: boss.x, y: bossFireY, angle: angleToPlayer, vx: Math.cos(angleToPlayer) * baseSpeed, vy: Math.sin(angleToPlayer) * baseSpeed, width: 8, height: 15, color: 'yellow' }); if (boss.level >= 2) { const spreadAngle = Math.PI / 15; for (let i = -1; i <= 1; i += 2) { const currentAngle = angleToPlayer + i * spreadAngle; bossLasers.push({ x: boss.x, y: bossFireY, angle: currentAngle, vx: Math.cos(currentAngle) * baseSpeed * 0.9, vy: Math.sin(currentAngle) * baseSpeed * 0.9, width: 7, height: 13, color: '#FFA500' }); } } if (boss.level >= 4) { const shoulderOffset = boss.width * 0.3; const sideAngleOffset = Math.PI / 10; bossLasers.push({ x: boss.x - shoulderOffset, y: boss.y + boss.height * 0.2, angle: angleToPlayer + sideAngleOffset, vx: Math.cos(angleToPlayer + sideAngleOffset) * baseSpeed * 0.8, vy: Math.sin(angleToPlayer + sideAngleOffset) * baseSpeed * 0.8, width: 6, height: 12, color: 'pink' }); bossLasers.push({ x: boss.x + shoulderOffset, y: boss.y + boss.height * 0.2, angle: angleToPlayer - sideAngleOffset, vx: Math.cos(angleToPlayer - sideAngleOffset) * baseSpeed * 0.8, vy: Math.sin(angleToPlayer - sideAngleOffset) * baseSpeed * 0.8, width: 6, height: 12, color: 'pink' }); } }
 function updateBossLasers() { for (let i = bossLasers.length - 1; i >= 0; i--) { const l = bossLasers[i]; l.x += l.vx; l.y += l.vy; if (l.x < -l.width * 2 || l.x > canvas.width + l.width * 2 || l.y < -l.height * 2 || l.y > canvas.height + l.height * 2) { bossLasers.splice(i, 1); } } }
 function bossDefeated() { boss = null; bossLasers = []; bossMusic.pause(); bgMusic.currentTime = 0; bgMusic.play().catch(e => console.warn("Música normal necesita interacción")); enemySpawnRate = Math.max(30, ENEMY_SPAWN_RATE_INITIAL * Math.pow(ENEMY_SPAWN_RATE_INCREASE, level - 1)); enemySpawnCounter = enemySpawnRate; spawnPowerUp(); if (zomsSpawnedThisLevel < MAX_ZOMS_PER_LEVEL && gamePhase === 'momo') { scheduleLevelZoms(); } }
 
-// --- Función para iniciar la transición a la fase "Madeline" ---
+// --- LÓGICA DE TRANSICIÓN Y FASES ---
 function startMadelineTransition() {
     gameRunning = false;
     cancelAnimationFrame(animationFrameId);
-    
     bgMusic.pause();
     bossMusic.pause();
-
     transitionVideo.style.display = 'block';
     transitionVideo.currentTime = 0;
     transitionVideo.play();
-
     transitionVideo.onended = () => {
         transitionVideo.style.display = 'none'; 
         gamePhase = 'madeline';
         document.body.classList.add('madeline-theme');
         gameTitle.textContent = "Mundo Interior"; 
-
-        enemies = [];
-        zomEnemies = [];
-        powerUps = [];
-        lasers = [];
-        bossLasers = [];
-        boss = null;
-        
-        player.x = canvas.width / 2;
-        player.y = canvas.height / 2;
-        player.vx = 0;
-        player.vy = 0;
-
+        enemies = []; zomEnemies = []; powerUps = []; lasers = []; bossLasers = []; boss = null;
+        player.x = canvas.width / 2; player.y = canvas.height / 2; player.vx = 0; player.vy = 0;
         setMusicVolume(musicVolume); 
         madelineMusic.currentTime = 0;
         madelineMusic.play().catch(e => console.warn("Música de Madeline requiere interacción."));
-        
         gameRunning = true;
         isPaused = false;
+        // NUEVO: Al terminar la transición, aparece el nuevo jefe
+        spawnCobraBoss();
         animationFrameId = requestAnimationFrame(gameLoop);
     };
 }
 
 
 function checkCollisions() {
+    // Colisiones de láseres del jugador
     for (let i = lasers.length - 1; i >= 0; i--) {
         if (!lasers[i]) continue;
         const l = lasers[i];
-        
         if (gamePhase === 'momo') {
-            for (let j = enemies.length - 1; j >= 0; j--) {
-                if (!enemies[j]) continue;
-                const e = enemies[j];
-                const dx = l.x - e.x, dy = l.y - e.y;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-                if (dist < (l.height / 2 + e.width / 2) * 0.85) {
-                    lasers.splice(i, 1); enemies.splice(j, 1);
-                    playSound(killSound); score += POINTS_PER_ENEMY; enemyKillCount++; updateScoreAndLevel();
-                    if (enemyKillCount > 0 && enemyKillCount % BOSS_KILL_THRESHOLD === 0 && (!boss || boss.state === 'leaving')) {
-                        const bossAppearanceLevel = Math.floor(enemyKillCount / BOSS_KILL_THRESHOLD);
-                        spawnBoss(bossAppearanceLevel);
-                    }
-                    break;
-                }
-            }
+            for (let j = enemies.length - 1; j >= 0; j--) { if (!enemies[j]) continue; const e = enemies[j]; const dx = l.x - e.x, dy = l.y - e.y; const dist = Math.sqrt(dx * dx + dy * dy); if (dist < (l.height / 2 + e.width / 2) * 0.85) { lasers.splice(i, 1); enemies.splice(j, 1); playSound(killSound); score += POINTS_PER_ENEMY; enemyKillCount++; updateScoreAndLevel(); if (enemyKillCount > 0 && enemyKillCount % BOSS_KILL_THRESHOLD === 0 && (!boss || boss.state === 'leaving')) { const bossAppearanceLevel = Math.floor(enemyKillCount / BOSS_KILL_THRESHOLD); spawnBoss(bossAppearanceLevel); } break; } }
             if (!lasers[i]) continue;
-            for (let j = zomEnemies.length - 1; j >= 0; j--) {
-                if (!zomEnemies[j]) continue;
-                const z = zomEnemies[j];
-                const dx = l.x - z.x, dy = l.y - z.y;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-                if (dist < (l.height / 2 + z.width / 2) * 0.85) {
-                    lasers.splice(i, 1); zomEnemies.splice(j, 1);
-                    score += POINTS_PER_ZOM; updateScoreAndLevel();
-                    break;
-                }
-            }
+            for (let j = zomEnemies.length - 1; j >= 0; j--) { if (!zomEnemies[j]) continue; const z = zomEnemies[j]; const dx = l.x - z.x, dy = l.y - z.y; const dist = Math.sqrt(dx * dx + dy * dy); if (dist < (l.height / 2 + z.width / 2) * 0.85) { lasers.splice(i, 1); zomEnemies.splice(j, 1); score += POINTS_PER_ZOM; updateScoreAndLevel(); break; } }
         }
     }
 
+    // Colisión con el jefe
     if (boss && boss.state === 'fighting') {
         for (let i = lasers.length - 1; i >= 0; i--) {
             if (!lasers[i]) continue;
@@ -268,22 +241,18 @@ function checkCollisions() {
                 boss.health--;
                 boss.hitTimer = 5;
                 if (boss.health <= 0) {
-                    if (boss.level === 2 && gamePhase === 'momo') {
-                        startMadelineTransition();
-                        return;
-                    } else {
+                    if (boss.type === 'momo') {
+                        if (boss.level === 2 && gamePhase === 'momo') { startMadelineTransition(); return; } 
+                        else { playSound(killSound); score += BOSS_POINTS_DEFEAT_BASE * boss.level; updateScoreAndLevel(); boss.state = 'dying'; boss.vx = 0; setTimeout(() => { if (boss && boss.state === 'dying') { boss.state = 'leaving'; boss.vy = -2; bossLasers = []; } }, 1500); }
+                    } else if (boss.type === 'cobra') { // NUEVO: Derrota de Cobra
                         playSound(killSound);
-                        score += BOSS_POINTS_DEFEAT_BASE * boss.level;
+                        score += 500; // Puntos extra por derrotar a Cobra
                         updateScoreAndLevel();
-                        boss.state = 'dying';
-                        boss.vx = 0;
+                        boss.state = 'dying'; // Inicia animación de muerte
                         setTimeout(() => {
-                            if (boss && boss.state === 'dying') {
-                                boss.state = 'leaving';
-                                boss.vy = -2;
-                                bossLasers = [];
-                            }
-                        }, 1500);
+                           gameOver("¡CICLO COMPLETADO!"); // Mensaje especial
+                           // El timeout en gameOver se encarga de mostrar el botón de reinicio.
+                        }, 2000); // Espera 2 segundos antes de reiniciar
                     }
                     break; 
                 }
@@ -291,6 +260,7 @@ function checkCollisions() {
         }
     }
     
+    // Colisiones del jugador
     for (let i = powerUps.length - 1; i >= 0; i--) { if (!powerUps[i]) continue; const p = powerUps[i]; const dx = player.x - p.x; const dy = player.y - p.y; const dist = Math.sqrt(dx * dx + dy * dy); if (dist < (player.width / 2 + p.width / 2) * 0.9) { applyPowerUp(p.type); powerUps.splice(i, 1); } }
     if (player.parryActive && boss && bossLasers.length > 0) { const parryRadius = player.width / 2 * 1.5; for (let i = bossLasers.length - 1; i >= 0; i--) { const l = bossLasers[i]; const dx = player.x - l.x; const dy = player.y - l.y; const dist = Math.sqrt(dx * dx + dy * dy); if (dist < (parryRadius + l.width / 2)) { bossLasers.splice(i, 1); console.log("¡Parry exitoso!"); player.parryActive = false; player.parryTimer = 0; break; } } }
     if (!player.invincible) {
@@ -301,61 +271,39 @@ function checkCollisions() {
         }
         if (!hitDetected && boss && (boss.state === 'fighting' || boss.state === 'entering')) { const dx = player.x - boss.x; const dy = player.y - boss.y; const dist = Math.sqrt(dx * dx + dy * dy); if (dist < (player.width / 2 + boss.width / 2) * 0.65) { hitPlayer(); hitDetected = true; } }
         if (!hitDetected) { for (let i = bossLasers.length - 1; i >= 0; i--) { if (!bossLasers[i]) continue; const l = bossLasers[i]; const dx = player.x - l.x, dy = player.y - l.y; const dist = Math.sqrt(dx * dx + dy * dy); if (dist < (player.width / 2 + l.width / 2) * 0.75) { bossLasers.splice(i, 1); hitPlayer(); hitDetected = true; break; } } }
+        // NUEVO: Colisión con proyectiles de Cobra
+        if (!hitDetected) { for (let i = cobraProjectiles.length - 1; i >= 0; i--) { if (!cobraProjectiles[i]) continue; const p = cobraProjectiles[i]; const dx = player.x - p.x; const dy = player.y - p.y; const dist = Math.sqrt(dx*dx + dy*dy); if (dist < (player.width/2 + p.width/2) * 0.75) { cobraProjectiles.splice(i, 1); hitPlayer(); hitDetected = true; break; } } }
     }
 }
-function hitPlayer() { if (player.invincible && player.invincibilityTimer > 0) return; lives--; updateScoreAndLevel(); if (lives <= 0) { gameOver("¡HAS PERDIDO!"); return; } const centerX = player.x; const centerY = player.y; const clearRadius = player.width * 2.5; enemies = enemies.filter(e => Math.sqrt(Math.pow(e.x - centerX, 2) + Math.pow(e.y - centerY, 2)) >= clearRadius); zomEnemies = zomEnemies.filter(z => Math.sqrt(Math.pow(z.x - centerX, 2) + Math.pow(z.y - centerY, 2)) >= clearRadius); bossLasers = bossLasers.filter(l => Math.sqrt(Math.pow(l.x - centerX, 2) + Math.pow(l.y - centerY, 2)) >= clearRadius * 1.5); player.x = canvas.width / 2; player.y = canvas.height / 2; player.vx = 0; player.vy = 0; player.angle = -Math.PI / 2; player.invincible = true; player.invincibilityTimer = INVINCIBILITY_DURATION; }
+function hitPlayer() { if (player.invincible && player.invincibilityTimer > 0) return; lives--; updateScoreAndLevel(); if (lives <= 0) { gameOver("¡HAS PERDIDO!"); return; } const centerX = player.x; const centerY = player.y; const clearRadius = player.width * 2.5; enemies = enemies.filter(e => Math.sqrt(Math.pow(e.x - centerX, 2) + Math.pow(e.y - centerY, 2)) >= clearRadius); zomEnemies = zomEnemies.filter(z => Math.sqrt(Math.pow(z.x - centerX, 2) + Math.pow(z.y - centerY, 2)) >= clearRadius); bossLasers = bossLasers.filter(l => Math.sqrt(Math.pow(l.x - centerX, 2) + Math.pow(l.y - centerY, 2)) >= clearRadius * 1.5); cobraProjectiles = cobraProjectiles.filter(p => Math.sqrt(Math.pow(p.x - centerX, 2) + Math.pow(p.y - centerY, 2)) >= clearRadius); player.x = canvas.width / 2; player.y = canvas.height / 2; player.vx = 0; player.vy = 0; player.angle = -Math.PI / 2; player.invincible = true; player.invincibilityTimer = INVINCIBILITY_DURATION; }
 function applyPowerUp(type) { if (type === 'fast_shot') { lives = Math.min(lives + 1, INITIAL_LIVES + 2); updateScoreAndLevel(); } else if (type === 'clear_screen') { score += enemies.length * POINTS_PER_ENEMY; enemies = []; playSound(kapumSound); updateScoreAndLevel(); } }
 function updateScoreAndLevel() { scoreDisplay.textContent = `Puntaje: ${score}`; livesDisplay.textContent = `Vidas: ${lives}`; levelDisplay.textContent = `Nivel: ${level}`; const previousLevel = level; const pointsPerLevel = 20; const newLevel = Math.max(1, Math.floor(score / pointsPerLevel) + 1); if (newLevel > previousLevel) { level = newLevel; levelDisplay.textContent = `Nivel: ${level}`; playSound(newStageSound); enemySpawnRate = Math.max(30, ENEMY_SPAWN_RATE_INITIAL * Math.pow(ENEMY_SPAWN_RATE_INCREASE, level - 1)); zomsSpawnedThisLevel = 0; if (gamePhase === 'momo' && (!boss || boss.state === 'leaving')) { scheduleLevelZoms(); } } }
 
 // --- FUNCIONES DE DIBUJO ---
-function drawPlayer() {
-    ctx.save();
-    ctx.translate(player.x, player.y);
-    ctx.rotate(player.angle + Math.PI / 2);
-    let alpha = 1.0;
-    if (player.invincible) { alpha = (Math.floor(Date.now() / 100) % 2 === 0) ? 0.4 : 1.0; }
-    ctx.globalAlpha = alpha;
-    try {
-        // MODIFICADO: Se usa siempre la misma imagen del jugador (playerImg)
-        if (playerImg.complete && playerImg.naturalWidth > 0) {
-            ctx.drawImage(playerImg, -player.width / 2, -player.height / 2, player.width, player.height);
-        } else {
-            ctx.fillStyle = "blue";
-            ctx.fillRect(-player.width / 2, -player.height / 2, player.width, player.height);
-        }
-    } catch (e) { console.error("Error dibujando jugador:", e); }
-    ctx.globalAlpha = 1.0;
-    ctx.restore();
-}
-
+function drawPlayer() { ctx.save(); ctx.translate(player.x, player.y); ctx.rotate(player.angle + Math.PI / 2); let alpha = 1.0; if (player.invincible) { alpha = (Math.floor(Date.now() / 100) % 2 === 0) ? 0.4 : 1.0; } ctx.globalAlpha = alpha; try { if (playerImg.complete && playerImg.naturalWidth > 0) { ctx.drawImage(playerImg, -player.width / 2, -player.height / 2, player.width, player.height); } else { ctx.fillStyle = "blue"; ctx.fillRect(-player.width / 2, -player.height / 2, player.width, player.height); } } catch (e) { console.error("Error dibujando jugador:", e); } ctx.globalAlpha = 1.0; ctx.restore(); }
 function drawParryBarrier() { if (!player.parryActive) return; const alpha = player.parryTimer / PARRY_DURATION; ctx.save(); ctx.translate(player.x, player.y); ctx.strokeStyle = `rgba(0, 255, 255, ${alpha * 0.9})`; ctx.fillStyle = `rgba(0, 255, 255, ${alpha * 0.2})`; ctx.lineWidth = 2 + (3 * (1 - alpha)); const radius = player.width / 2 * 1.5; ctx.beginPath(); ctx.arc(0, 0, radius, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.restore(); }
 function drawLasers() { lasers.forEach(l => { ctx.save(); ctx.translate(l.x, l.y); ctx.rotate(l.angle + Math.PI / 2); ctx.fillStyle = "lime"; ctx.fillRect(-l.width / 2, -l.height / 2, l.width, l.height); ctx.restore(); }); }
 function drawNormalEnemies() { enemies.forEach(e => { ctx.save(); ctx.translate(e.x, e.y); try { if (e.image && e.image.complete && e.image.naturalWidth > 0) { ctx.drawImage(e.image, -e.width / 2, -e.height / 2, e.width, e.height); } else { ctx.fillStyle = "red"; ctx.fillRect(-e.width / 2, -e.height / 2, e.width, e.height); } } catch (err) { console.error(`Error dibujando enemigo ${e.type}:`, err); } ctx.restore(); }); }
 function drawZomEnemies() { zomEnemies.forEach(z => { ctx.save(); ctx.translate(z.x, z.y); try { if (zomImg.complete && zomImg.naturalWidth > 0) { ctx.drawImage(zomImg, -z.width / 2, -z.height / 2, z.width, z.height); } else { ctx.fillStyle = "orange"; ctx.fillRect(-z.width / 2, -z.height / 2, z.width, z.height); } } catch (err) { console.error(`Error dibujando enemigo Zom:`, err); } ctx.restore(); }); }
 function drawPowerUps() { powerUps.forEach(p => { ctx.save(); ctx.translate(p.x, p.y); try { if (p.image && p.image.complete && p.image.naturalWidth > 0) { ctx.drawImage(p.image, -p.width / 2, -p.height / 2, p.width, p.height); } else { ctx.fillStyle = "cyan"; ctx.fillRect(-p.width / 2, -p.height / 2, p.width, p.height); } } catch (err) { console.error(`Error dibujando powerup ${p.type}:`, err); } ctx.restore(); }); }
-function drawBossUI() { if (boss && (boss.state === 'fighting' || boss.state === 'entering' || boss.state === 'dying')) { const barWidth = canvas.width * 0.4; const barHeight = 25; const padding = 15; const barX = padding; const barY = canvas.height - barHeight - padding; const healthPercent = Math.max(0, boss.health / boss.maxHealth); ctx.fillStyle = "white"; ctx.font = "bold 18px 'Courier New', Courier, monospace"; ctx.textAlign = "left"; ctx.textBaseline = "bottom"; ctx.shadowColor = "black"; ctx.shadowBlur = 4; ctx.shadowOffsetX = 2; ctx.shadowOffsetY = 2; ctx.fillText(`JEFE MOMO Nv. ${boss.level}`, barX, barY - 5); ctx.shadowColor = "transparent"; ctx.shadowBlur = 0; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0; ctx.fillStyle = 'rgba(100, 0, 0, 0.8)'; ctx.fillRect(barX, barY, barWidth, barHeight); const gradient = ctx.createLinearGradient(barX, barY, barX, barY + barHeight); gradient.addColorStop(0, 'rgba(0, 255, 0, 0.9)'); gradient.addColorStop(0.5, 'rgba(0, 200, 0, 0.9)'); gradient.addColorStop(1, 'rgba(0, 255, 0, 0.9)'); ctx.fillStyle = gradient; if (healthPercent > 0) { ctx.fillRect(barX + 1, barY + 1, Math.max(0, (barWidth - 2) * healthPercent), barHeight - 2); } ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)'; ctx.lineWidth = 2; ctx.strokeRect(barX, barY, barWidth, barHeight); ctx.fillStyle = "white"; ctx.font = "bold 14px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.shadowColor = "black"; ctx.shadowBlur = 2; ctx.shadowOffsetX = 1; ctx.shadowOffsetY = 1; ctx.fillText(`${boss.health} / ${boss.maxHealth}`, barX + barWidth / 2, barY + barHeight / 2 + 1); ctx.shadowColor = "transparent"; ctx.shadowBlur = 0; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0; ctx.textBaseline = "alphabetic"; ctx.textAlign = "start"; } }
+function drawBossUI() { if (boss && (boss.state === 'fighting' || boss.state === 'entering' || boss.state === 'dying')) { const barWidth = canvas.width * 0.4; const barHeight = 25; const padding = 15; const barX = padding; const barY = canvas.height - barHeight - padding; const healthPercent = Math.max(0, boss.health / boss.maxHealth); ctx.fillStyle = "white"; ctx.font = "bold 18px 'Courier New', Courier, monospace"; ctx.textAlign = "left"; ctx.textBaseline = "bottom"; ctx.shadowColor = "black"; ctx.shadowBlur = 4; ctx.shadowOffsetX = 2; ctx.shadowOffsetY = 2; const bossName = boss.type === 'momo' ? `JEFE MOMO Nv. ${boss.level}` : "LA COBRA"; ctx.fillText(bossName, barX, barY - 5); ctx.shadowColor = "transparent"; ctx.shadowBlur = 0; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0; ctx.fillStyle = 'rgba(100, 0, 0, 0.8)'; ctx.fillRect(barX, barY, barWidth, barHeight); const gradient = ctx.createLinearGradient(barX, barY, barX, barY + barHeight); gradient.addColorStop(0, 'rgba(0, 255, 0, 0.9)'); gradient.addColorStop(0.5, 'rgba(0, 200, 0, 0.9)'); gradient.addColorStop(1, 'rgba(0, 255, 0, 0.9)'); ctx.fillStyle = gradient; if (healthPercent > 0) { ctx.fillRect(barX + 1, barY + 1, Math.max(0, (barWidth - 2) * healthPercent), barHeight - 2); } ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)'; ctx.lineWidth = 2; ctx.strokeRect(barX, barY, barWidth, barHeight); ctx.fillStyle = "white"; ctx.font = "bold 14px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.shadowColor = "black"; ctx.shadowBlur = 2; ctx.shadowOffsetX = 1; ctx.shadowOffsetY = 1; ctx.fillText(`${boss.health} / ${boss.maxHealth}`, barX + barWidth / 2, barY + barHeight / 2 + 1); ctx.shadowColor = "transparent"; ctx.shadowBlur = 0; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0; ctx.textBaseline = "alphabetic"; ctx.textAlign = "start"; } }
 function drawBoss() { if (!boss) return; ctx.save(); ctx.translate(boss.x, boss.y); let activeFilter = 'none'; if (boss.hitTimer > 0) { activeFilter = 'brightness(2.5)'; } ctx.filter = activeFilter; let dyingAlpha = 1.0; if (boss.state === 'dying') { if (Math.floor(Date.now() / 80) % 2 === 0) { dyingAlpha = 0.3; } } ctx.globalAlpha = dyingAlpha; try { if (boss.image && boss.image.complete && boss.image.naturalWidth > 0) { ctx.drawImage(boss.image, -boss.width / 2, -boss.height / 2, boss.width, boss.height); } else { ctx.fillStyle = "purple"; ctx.fillRect(-boss.width / 2, -boss.height / 2, boss.width, boss.height); } } catch (err) { console.error("Error dibujando jefe:", err); } ctx.filter = 'none'; ctx.globalAlpha = 1.0; ctx.restore(); }
 function drawBossLasers() { bossLasers.forEach(l => { ctx.save(); ctx.translate(l.x, l.y); ctx.rotate(l.angle + Math.PI / 2); ctx.fillStyle = l.color || "yellow"; ctx.fillRect(-l.width / 2, -l.height / 2, l.width, l.height); ctx.restore(); }); }
+// NUEVO: Función para dibujar proyectiles de Cobra
+function drawCobraProjectiles() { cobraProjectiles.forEach(p => { ctx.save(); ctx.translate(p.x, p.y); try { if (p.image && p.image.complete && p.image.naturalWidth > 0) { ctx.drawImage(p.image, -p.width / 2, -p.height / 2, p.width, p.height); } else { ctx.fillStyle = "magenta"; ctx.fillRect(-p.width/2, -p.height/2, p.width, p.height); } } catch(e) { console.error("Error dibujando bala de cobra", e); } ctx.restore(); }); }
 function updateParryButtonUI() { if (!parryButton) return; if (player.parryCooldown > 0) { parryButton.style.opacity = '0.4'; parryButton.style.cursor = 'not-allowed'; } else { parryButton.style.opacity = '1'; parryButton.style.cursor = 'pointer'; } }
 
 
 // --- Bucle Principal y Gestión del Juego ---
 function gameLoop() {
     if (!gameRunning) return;
-    updatePlayer(); updateLasers(); updateNormalEnemies(); updateZomEnemies(); updatePowerUps(); updateBoss(); updateBossLasers(); updateParryButtonUI();
+    updatePlayer(); updateLasers(); updateNormalEnemies(); updateZomEnemies(); updatePowerUps(); updateBoss(); updateBossLasers(); updateCobraProjectiles(); updateParryButtonUI();
     checkCollisions();
     if (gameRunning) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        try {
-            const currentBg = gamePhase === 'momo' ? bgImg : bgMadelineImg;
-            if (currentBg.complete && currentBg.naturalWidth > 0) {
-                 ctx.drawImage(currentBg, 0, 0, canvas.width, canvas.height);
-            } else {
-                 ctx.fillStyle = "#000011"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-            }
-        } catch (e) { console.error("Error dibujando fondo:", e); ctx.fillStyle = "#000011"; ctx.fillRect(0, 0, canvas.width, canvas.height); }
+        try { const currentBg = gamePhase === 'momo' ? bgImg : bgMadelineImg; if (currentBg.complete && currentBg.naturalWidth > 0) { ctx.drawImage(currentBg, 0, 0, canvas.width, canvas.height); } else { ctx.fillStyle = "#000011"; ctx.fillRect(0, 0, canvas.width, canvas.height); } } catch (e) { console.error("Error dibujando fondo:", e); ctx.fillStyle = "#000011"; ctx.fillRect(0, 0, canvas.width, canvas.height); }
         drawNormalEnemies(); drawZomEnemies(); drawPowerUps(); drawLasers();
-        drawBossLasers(); drawBoss(); drawPlayer(); drawParryBarrier(); drawBossUI();
+        drawBossLasers(); drawCobraProjectiles(); drawBoss(); drawPlayer(); drawParryBarrier(); drawBossUI();
         animationFrameId = requestAnimationFrame(gameLoop);
     }
 }
@@ -375,7 +323,7 @@ function startGame() {
     score = 0; level = 1; lives = INITIAL_LIVES; enemyKillCount = 0;
     zomsSpawnedThisLevel = 0; lasers = []; enemies = []; zomEnemies = [];
     powerUps = []; keys = {}; enemySpawnCounter = 0; enemySpawnRate = ENEMY_SPAWN_RATE_INITIAL;
-    boss = null; bossLasers = [];
+    boss = null; bossLasers = []; cobraProjectiles = [];
 
     player = {
         x: canvas.width / 2, y: canvas.height / 2, width: PLAYER_SIZE, height: PLAYER_SIZE,
@@ -417,12 +365,7 @@ function gameOver(message = "¡JUEGO TERMINADO!") {
 
 function showInitialScreen() {
     ctx.clearRect(0,0, canvas.width, canvas.height);
-    try {
-        const currentBg = gamePhase === 'momo' ? bgImg : bgMadelineImg;
-        if (currentBg.complete && currentBg.naturalWidth > 0) {
-            ctx.drawImage(currentBg, 0, 0, canvas.width, canvas.height);
-        }
-    } catch (e) { console.error("Error dibujando imagen de fondo inicial:", e); }
+    try { const currentBg = gamePhase === 'momo' ? bgImg : bgMadelineImg; if (currentBg.complete && currentBg.naturalWidth > 0) { ctx.drawImage(currentBg, 0, 0, canvas.width, canvas.height); } } catch (e) { console.error("Error dibujando imagen de fondo inicial:", e); }
     
     startButton.style.display = 'block'; instructionsDiv.style.display = 'block';
     settingsButton.style.display = 'block'; pauseButton.style.display = 'none';
