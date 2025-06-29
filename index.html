@@ -9,7 +9,7 @@
 <body>
     <div id="game-wrapper">
         <div class="game-header">
-            <h1>Asteroides Infinito</h1>
+            <h1 id="game-title">Asteroides Infinito</h1>
             <div id="ui">
                 <div id="score">Puntaje: 0</div>
                 <div id="lives">Vidas: 3</div>
@@ -18,9 +18,14 @@
         </div>
         <div id="game-container">
             <canvas id="gameCanvas" width="800" height="600"></canvas>
+            
+            <video id="transitionVideo" preload="auto" src="madeline/transicion.mp4"></video>
+
             <button id="startButton">Iniciar Juego</button>
+            <button id="settings-button"><img src="config.png" alt="Ajustes"></button>
             <div id="instructions">
-                </div>
+                PC: Flechas para mover, Espacio para disparar, Z para barrera.
+            </div>
         </div>
     </div>
     <div id="touch-controls">
@@ -29,7 +34,10 @@
             <button class="dpad-button" id="dpad-left">◀</button>
             <button class="dpad-button" id="dpad-right">▶</button>
         </div>
-        <button id="shoot-button">DISPARAR</button>
+        <div id="action-buttons">
+            <button id="parry-button">BARRERA</button>
+            <button id="shoot-button">DISPARAR</button>
+        </div>
     </div>
 
     <audio id="bgMusic" src="music.mp3" preload="auto" loop></audio>
@@ -41,6 +49,28 @@
     <audio id="bossMusic" src="bmu.mp3" preload="auto" loop></audio>
     <audio id="kapumSound" src="kapum.mp3" preload="auto"></audio>
     <audio id="zomSound" src="zom.mp3" preload="auto"></audio>
+
+    <audio id="madelineMusic" src="madeline/segundaparte.mp3" preload="auto" loop></audio>
+
+
+    <button id="pause-button"><img src="pausa.png" alt="Pausa"></button>
+
+    <div id="settings-modal">
+        <div class="settings-content">
+            <h2>Ajustes de Sonido</h2>
+            <div class="slider-container">
+                <label for="music-volume-slider">Música:</label>
+                <input type="range" id="music-volume-slider" min="0" max="100" value="20">
+                <span id="music-volume-label">20</span>
+            </div>
+            <div class="slider-container">
+                <label for="sfx-volume-slider">Efectos:</label>
+                <input type="range" id="sfx-volume-slider" min="0" max="100" value="50">
+                <span id="sfx-volume-label">50</span>
+            </div>
+            <button id="close-settings-button">Cerrar</button>
+        </div>
+    </div>
 
     <script src="game.js"></script>
 </body>
