@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Asteroides</title>
     <link rel="stylesheet" href="style.css">
-</head><body>
+</head>
+<body>
     <div id="game-wrapper">
         <div class="game-header">
             <h1 id="game-title"></h1>
@@ -17,15 +18,10 @@
         </div>
         <div id="game-container">
             <canvas id="gameCanvas" width="800" height="600"></canvas>
-            
             <video id="transitionVideo" preload="auto" src="madeline/transicion.mp4"></video>
-
-            <button id="startButton">Iniciar Juego</button>
-            <button id="settings-button"><img src="config.png" alt="Ajustes"></button>
-            <div id="instructions">
-            </div>
         </div>
     </div>
+
     <div id="touch-controls">
         <div id="dpad">
             <button class="dpad-button" id="dpad-up">▲</button>
@@ -38,6 +34,35 @@
         </div>
     </div>
 
+    <div id="main-menu-view">
+        <h1 class="main-title">Asteroides</h1>
+        <button id="startButton">Iniciar Juego</button>
+        <button id="editsButton">Edits (Bonus)</button>
+        <button id="settings-button-main"><img src="config.png" alt="Ajustes"></button>
+        <div id="instructions"></div>
+    </div>
+    
+    <div id="edits-view">
+        <button id="back-button">← Volver al Menú</button>
+        <h2>Edits (Bonus)</h2>
+        <div class="video-grid">
+            <a data-video-src="edits/belli.mp4" class="video-item">Bellingham</a>
+            <a data-video-src="edits/chicomoto.mp4" class="video-item">Chicomoto</a>
+            <a data-video-src="edits/kevin.mp4" class="video-item">Kevin</a>
+            <a data-video-src="edits/messi.mp4" class="video-item">Messi</a>
+            <a data-video-src="edits/ney.mp4" class="video-item">Neymar 1</a>
+            <a data-video-src="edits/ney2.mp4" class="video-item">Neymar 2</a>
+            <a data-video-src="edits/palmer.mp4" class="video-item">Palmer</a>
+            <a data-video-src="edits/ronaldo.mp4" class="video-item">Ronaldo</a>
+            <a data-video-src="edits/vini.mp4" class="video-item">Vinicius</a>
+        </div>
+    </div>
+
+    <div id="video-player-view">
+        <video id="edit-video-player" controls preload="auto"></video>
+        <button id="back-from-video-button">← Volver a Edits</button>
+    </div>
+
     <audio id="bgMusic" src="music.mp3" preload="auto" loop></audio>
     <audio id="shotSound" src="shot.mp3" preload="auto"></audio>
     <audio id="killSound" src="kill.mp3" preload="auto"></audio>
@@ -47,15 +72,12 @@
     <audio id="bossMusic" src="bmu.mp3" preload="auto" loop></audio>
     <audio id="kapumSound" src="kapum.mp3" preload="auto"></audio>
     <audio id="zomSound" src="zom.mp3" preload="auto"></audio>
-
     <audio id="madelineMusic" src="madeline/segundaparte.mp3" preload="auto" loop></audio>
     <audio id="cobraSound1" src="madeline/boe.mp3" preload="auto"></audio>
     <audio id="cobraSound2" src="madeline/acabado.mp3" preload="auto"></audio>
-    <audio id="cobraSound3" src="madeline/critica.mp3" preload="auto"></audio>
+    <audio id="cobraSound3"src="madeline/critica.mp3" preload="auto"></audio>
     <audio id="grenadeSound" src="madeline/river.mp3" preload="auto"></audio>
-
     <audio id="cajaAbiertaSound" src="cajaabierta.mp3" preload="auto"></audio>
-
 
     <button id="pause-button"><img src="pausa.png" alt="Pausa"></button>
 
@@ -79,7 +101,6 @@
     <div id="dev-menu">
         <div class="dev-content">
             <h2>MENÚ DE DESARROLLADOR</h2>
-
             <div class="dev-section">
                 <h3>Estado del Jugador</h3>
                 <div class="dev-controls">
@@ -99,38 +120,10 @@
                     </div>
                 </div>
             </div>
-
-            <div class="dev-section">
-                <h3>Invocaciones</h3>
-                <div class="dev-controls">
-                    <button id="dev-spawn-momo-1">Invocar Jefe MOMO (Nv.1)</button>
-                    <button id="dev-spawn-momo-2">Invocar Jefe MOMO (Nv.2)</button>
-                    <button id="dev-spawn-cobra">Invocar Jefe COBRA</button>
-                    <button id="dev-spawn-zom">Invocar 'Zom'</button>
-                    <button id="dev-clear-enemies">Limpiar Enemigos</button>
-                </div>
-            </div>
-
-            <div class="dev-section">
-                <h3>Progresión y Fases</h3>
-                <div class="dev-controls">
-                    <button id="dev-next-level">Avanzar Nivel (+20 pts)</button>
-                    <button id="dev-start-madeline">Iniciar Fase Madeline</button>
-                    <button id="dev-complete-cycle">Completar Ciclo Actual</button>
-                </div>
-            </div>
-            
-            <div class="dev-section">
-                <h3>Acciones del Juego</h3>
-                <div class="dev-controls">
-                     <button id="dev-game-over">Forzar Game Over</button>
-                     <button id="dev-hit-player">Dañar Jugador</button>
-                </div>
-            </div>
-
             <button id="close-dev-menu">Cerrar Menú (Tecla 4)</button>
         </div>
     </div>
+    
     <script src="game.js"></script>
 </body>
 </html>
