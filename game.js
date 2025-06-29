@@ -48,7 +48,6 @@ const grenadeImg = new Image(); grenadeImg.src = 'madeline/river.png';
 
 
 // --- Sonidos ---
-// **** CORREGIDO: Se han usado los IDs correctos del HTML ****
 const bgMusic = document.getElementById('bgMusic');
 const shotSound = document.getElementById('shotSound');
 const killSound = document.getElementById('killSound');
@@ -74,10 +73,9 @@ const ENEMY_SPAWN_RATE_INITIAL = 180; const ENEMY_SPAWN_RATE_INCREASE = 0.975;
 const INITIAL_LIVES = 3; const INVINCIBILITY_DURATION = 3500; const MAX_ZOMS_PER_LEVEL = 2;
 // Habilidad especial
 const PARRY_DURATION = 15; const PARRY_COOLDOWN_TIME = 0;
-// MODIFICADO: Configuración de la Granada
-const GRENADE_COOLDOWN = 420; // 7 segundos (60fps * 7)
+const GRENADE_COOLDOWN = 420;
 const GRENADE_SPEED = 4;
-const GRENADE_SIZE = 75; // MODIFICADO: Aumentado de 50 a 75
+const GRENADE_SIZE = 75;
 const GRENADE_DAMAGE = 3;
 // Config Jefes
 const BOSS_BASE_SIZE = 160; const BOSS_BASE_HEALTH = 12; const BOSS_LASER_SPEED = 4.5;
@@ -91,8 +89,9 @@ const COBRA_VERTICAL_SPEED = 1.5;
 
 // --- Variables de Estado del Juego ---
 let score = 0; let level = 1; let lives = INITIAL_LIVES;
-let gameCycle = 1; // NUEVO: Contador de ciclos para New Game+
+let gameCycle = 1;
 let gameRunning = false; let isPaused = false;
+let isPlayerLocked = false;
 let animationFrameId; let enemySpawnCounter = 0;
 let enemySpawnRate = ENEMY_SPAWN_RATE_INITIAL; let enemyKillCount = 0;
 let zomsSpawnedThisLevel = 0; let musicVolume = 0.2; let sfxVolume = 0.5;
@@ -122,34 +121,51 @@ function handleTouchEnd(e, keyCode) { e.preventDefault(); keys[keyCode] = false;
 
 function wrapAround(obj) { const w = canvas.width, h = canvas.height; const hw = obj.width / 2, hh = obj.height / 2; if (obj.x < -hw) obj.x = w + hw; if (obj.x > w + hw) obj.x = -hw; if (obj.y < -hh) obj.y = h + hh; if (obj.y > h + hh) obj.y = -hh; }
 
+// **** CORREGIDO: Se ha restaurado la línea que actualiza el ángulo del jugador ****
 function updatePlayer() {
-    const playerActionIsLocked = boss && boss.type === 'cobra' && boss.state === 'entering';
+    player.rotation = keys['ArrowLeft'] && !isPlayerLocked ? -PLAYER_TURN_SPEED : (keys['ArrowRight'] && !isPlayerLocked ? PLAYER_TURN_SPEED : 0);
+    player.angle += player.rotation; // <-- ESTA LÍNEA SE HA RESTAURADO
+    
+    player.thrusting = keys['ArrowUp'] && !isPlayerLocked;
+    
+    if (player.thrusting) { 
+        player.vx += Math.cos(player.angle) * PLAYER_THRUST; 
+        player.vy += Math.sin(player.angle) * PLAYER_THRUST; 
+    }
 
-    player.rotation = keys['ArrowLeft'] && !playerActionIsLocked ? -PLAYER_TURN_SPEED : (keys['ArrowRight'] && !playerActionIsLocked ? PLAYER_TURN_SPEED : 0);
-    player.angle += player.rotation;
-    player.thrusting = keys['ArrowUp'] && !playerActionIsLocked;
-    if (player.thrusting) { player.vx += Math.cos(player.angle) * PLAYER_THRUST; player.vy += Math.sin(player.angle) * PLAYER_THRUST; }
-    player.vx *= FRICTION; player.vy *= FRICTION;
-    player.x += player.vx; player.y += player.vy;
+    player.vx *= FRICTION; 
+    player.vy *= FRICTION;
+    player.x += player.vx; 
+    player.y += player.vy;
     wrapAround(player);
+    
     if (player.shootCooldown > 0) player.shootCooldown--;
     
-    if (keys['Space'] && player.shootCooldown <= 0 && !player.parryActive && !playerActionIsLocked) { 
+    if (keys['Space'] && player.shootCooldown <= 0 && !player.parryActive && !isPlayerLocked) { 
         shootLaser(); 
         player.shootCooldown = player.currentFireRate; 
     }
     
-    if (player.invincible) { player.invincibilityTimer -= 1000 / 60; if (player.invincibilityTimer <= 0) { player.invincible = false; } }
+    if (player.invincible) { 
+        player.invincibilityTimer -= 1000 / 60; 
+        if (player.invincibilityTimer <= 0) { 
+            player.invincible = false; 
+        } 
+    }
 
     if (gamePhase === 'madeline') {
         if (player.grenadeCooldown > 0) player.grenadeCooldown--;
-        if (keys['KeyZ'] && player.grenadeCooldown <= 0 && !playerActionIsLocked) {
+        if (keys['KeyZ'] && player.grenadeCooldown <= 0 && !isPlayerLocked) {
             shootGrenade();
         }
-    } else { // Fase 'momo'
+    } else {
         if (player.parryCooldown > 0) player.parryCooldown--;
-        if (player.parryTimer > 0) { player.parryTimer--; } else if (player.parryActive) { player.parryActive = false; }
-        if (keys['KeyZ'] && player.parryCooldown <= 0 && !playerActionIsLocked) { 
+        if (player.parryTimer > 0) { 
+            player.parryTimer--; 
+        } else if (player.parryActive) { 
+            player.parryActive = false; 
+        }
+        if (keys['KeyZ'] && player.parryCooldown <= 0 && !isPlayerLocked) { 
             player.parryActive = true; 
             player.parryTimer = PARRY_DURATION; 
             player.parryCooldown = PARRY_COOLDOWN_TIME; 
@@ -213,14 +229,76 @@ function spawnBoss(bossAppearanceLevel) {
 }
 function spawnCobraBoss() { 
     if (boss) return; 
-    console.log("¡Aparece LA COBRA!"); 
+    console.log("¡Aparece LA COBRA!");
+    isPlayerLocked = true;
     const difficultyMultiplier = 1 + (gameCycle - 1) * 0.25;
     const cobraHealth = COBRA_HEALTH * difficultyMultiplier;
     boss = { x: canvas.width + COBRA_SIZE, y: canvas.height / 2, width: COBRA_SIZE, height: COBRA_SIZE, vx: -COBRA_ENTRY_SPEED, vy: 0, health: cobraHealth, maxHealth: cobraHealth, image: cobraImg, shootCooldown: COBRA_SHOOT_INTERVAL * 2, shootInterval: COBRA_SHOOT_INTERVAL, state: 'entering', hitTimer: 0, type: 'cobra' }; 
 }
 function cobraShoot() { if (!boss || boss.state !== 'fighting') return; const projectile = { x: boss.x - boss.width / 2, y: boss.y, vx: -COBRA_PROJECTILE_SPEED, width: 80, height: 60, image: balaCobraImg }; cobraProjectiles.push(projectile); const randomSound = cobraSounds[Math.floor(Math.random() * cobraSounds.length)]; playSound(randomSound); }
 function updateCobraProjectiles() { for (let i = cobraProjectiles.length - 1; i >= 0; i--) { const p = cobraProjectiles[i]; p.x += p.vx; if (p.x + p.width < 0) { cobraProjectiles.splice(i, 1); } } }
-function updateBoss() { if (!boss) return; if (boss.hitTimer > 0) boss.hitTimer--; if (boss.type === 'momo') { if (boss.state === 'entering') { boss.y += boss.vy; if (boss.y >= boss.height * 0.4) { boss.y = boss.height * 0.4; boss.vy = 0; boss.state = 'fighting'; } } else if (boss.state === 'fighting') { boss.x += boss.vx; const halfWidth = boss.width / 2; if (boss.x <= halfWidth) { boss.x = halfWidth; boss.vx = Math.abs(boss.vx); } else if (boss.x >= canvas.width - halfWidth) { boss.x = canvas.width - halfWidth; boss.vx = -Math.abs(boss.vx); } boss.shootCooldown--; if (boss.shootCooldown <= 0) { bossShoot(); boss.shootCooldown = boss.shootInterval; } boss.soundCooldown--; if (boss.soundCooldown <= 0) { const soundToPlay = Math.random() < 0.5 ? momoSound1 : momoSound2; playSound(soundToPlay); boss.soundCooldown = BOSS_SOUND_INTERVAL + (Math.random() - 0.5) * 60; } } else if (boss.state === 'leaving') { boss.y += boss.vy; if (boss.y < -boss.height * 1.5) { bossDefeated(); } } } else if (boss.type === 'cobra') { if (boss.state === 'entering') { boss.x += boss.vx; const targetX = canvas.width - boss.width / 2; if (boss.x <= targetX) { boss.x = targetX; boss.vx = 0; boss.vy = COBRA_VERTICAL_SPEED; boss.state = 'fighting'; } } else if (boss.state === 'fighting') { boss.y += boss.vy; if (boss.y - boss.height / 2 < 0 || boss.y + boss.height / 2 > canvas.height) { boss.vy *= -1; } boss.shootCooldown--; if (boss.shootCooldown <= 0) { cobraShoot(); boss.shootCooldown = boss.shootInterval; } } } }
+function updateBoss() { 
+    if (!boss) return; 
+    if (boss.hitTimer > 0) boss.hitTimer--; 
+    if (boss.type === 'momo') { 
+        if (boss.state === 'entering') { 
+            boss.y += boss.vy; 
+            if (boss.y >= boss.height * 0.4) { 
+                boss.y = boss.height * 0.4; 
+                boss.vy = 0; 
+                boss.state = 'fighting'; 
+            } 
+        } else if (boss.state === 'fighting') { 
+            boss.x += boss.vx; 
+            const halfWidth = boss.width / 2; 
+            if (boss.x <= halfWidth) { 
+                boss.x = halfWidth; 
+                boss.vx = Math.abs(boss.vx); 
+            } else if (boss.x >= canvas.width - halfWidth) { 
+                boss.x = canvas.width - halfWidth; 
+                boss.vx = -Math.abs(boss.vx); 
+            } 
+            boss.shootCooldown--; 
+            if (boss.shootCooldown <= 0) { 
+                bossShoot(); 
+                boss.shootCooldown = boss.shootInterval; 
+            } 
+            boss.soundCooldown--; 
+            if (boss.soundCooldown <= 0) { 
+                const soundToPlay = Math.random() < 0.5 ? momoSound1 : momoSound2; 
+                playSound(soundToPlay); 
+                boss.soundCooldown = BOSS_SOUND_INTERVAL + (Math.random() - 0.5) * 60; 
+            } 
+        } else if (boss.state === 'leaving') { 
+            boss.y += boss.vy; 
+            if (boss.y < -boss.height * 1.5) { 
+                bossDefeated(); 
+            } 
+        } 
+    } else if (boss.type === 'cobra') { 
+        if (boss.state === 'entering') { 
+            boss.x += boss.vx; 
+            const targetX = canvas.width - boss.width / 2; 
+            if (boss.x <= targetX) { 
+                boss.x = targetX; 
+                boss.vx = 0; 
+                boss.vy = COBRA_VERTICAL_SPEED; 
+                boss.state = 'fighting'; 
+                isPlayerLocked = false;
+            } 
+        } else if (boss.state === 'fighting') { 
+            boss.y += boss.vy; 
+            if (boss.y - boss.height / 2 < 0 || boss.y + boss.height / 2 > canvas.height) { 
+                boss.vy *= -1; 
+            } 
+            boss.shootCooldown--; 
+            if (boss.shootCooldown <= 0) { 
+                cobraShoot(); 
+                boss.shootCooldown = boss.shootInterval; 
+            } 
+        } 
+    } 
+}
 function bossShoot() { if (!boss || boss.state !== 'fighting') return; const playerEffectiveY = player.y - player.height / 2; const bossFireY = boss.y + boss.height * 0.4; const angleToPlayer = Math.atan2(playerEffectiveY - bossFireY, player.x - boss.x); const baseSpeed = BOSS_LASER_SPEED + boss.level * 0.1; bossLasers.push({ x: boss.x, y: bossFireY, angle: angleToPlayer, vx: Math.cos(angleToPlayer) * baseSpeed, vy: Math.sin(angleToPlayer) * baseSpeed, width: 8, height: 15, color: 'yellow' }); if (boss.level >= 2) { const spreadAngle = Math.PI / 15; for (let i = -1; i <= 1; i += 2) { const currentAngle = angleToPlayer + i * spreadAngle; bossLasers.push({ x: boss.x, y: bossFireY, angle: currentAngle, vx: Math.cos(currentAngle) * baseSpeed * 0.9, vy: Math.sin(currentAngle) * baseSpeed * 0.9, width: 7, height: 13, color: '#FFA500' }); } } if (boss.level >= 4) { const shoulderOffset = boss.width * 0.3; const sideAngleOffset = Math.PI / 10; bossLasers.push({ x: boss.x - shoulderOffset, y: boss.y + boss.height * 0.2, angle: angleToPlayer + sideAngleOffset, vx: Math.cos(angleToPlayer + sideAngleOffset) * baseSpeed * 0.8, vy: Math.sin(angleToPlayer + sideAngleOffset) * baseSpeed * 0.8, width: 6, height: 12, color: 'pink' }); bossLasers.push({ x: boss.x + shoulderOffset, y: boss.y + boss.height * 0.2, angle: angleToPlayer - sideAngleOffset, vx: Math.cos(angleToPlayer - sideAngleOffset) * baseSpeed * 0.8, vy: Math.sin(angleToPlayer - sideAngleOffset) * baseSpeed * 0.8, width: 6, height: 12, color: 'pink' }); } }
 function updateBossLasers() { for (let i = bossLasers.length - 1; i >= 0; i--) { const l = bossLasers[i]; l.x += l.vx; l.y += l.vy; if (l.x < -l.width * 2 || l.x > canvas.width + l.width * 2 || l.y < -l.height * 2 || l.y > canvas.height + l.height * 2) { bossLasers.splice(i, 1); } } }
 function bossDefeated() { boss = null; bossLasers = []; bossMusic.pause(); bgMusic.currentTime = 0; bgMusic.play().catch(e => console.warn("Música normal necesita interacción")); enemySpawnRate = Math.max(30, ENEMY_SPAWN_RATE_INITIAL * Math.pow(ENEMY_SPAWN_RATE_INCREASE, level - 1)); enemySpawnCounter = enemySpawnRate; spawnPowerUp(); if (zomsSpawnedThisLevel < MAX_ZOMS_PER_LEVEL && gamePhase === 'momo') { scheduleLevelZoms(); } }
@@ -253,7 +331,6 @@ function startMadelineTransition() {
 
 // --- LÓGICA DE COLISIONES ---
 function checkCollisions() {
-    // Colisiones de láseres del jugador con enemigos
     for (let i = lasers.length - 1; i >= 0; i--) {
         if (!lasers[i]) continue;
         const l = lasers[i];
@@ -264,7 +341,6 @@ function checkCollisions() {
         }
     }
 
-    // Colisión con el jefe (láseres y granadas)
     if (boss && boss.state === 'fighting') {
         for (let i = lasers.length - 1; i >= 0; i--) {
             if (!lasers[i]) continue;
@@ -323,7 +399,6 @@ function checkCollisions() {
         }
     }
     
-    // Colisiones del jugador
     for (let i = powerUps.length - 1; i >= 0; i--) { if (!powerUps[i]) continue; const p = powerUps[i]; const dx = player.x - p.x, dy = player.y - p.y; const dist = Math.sqrt(dx * dx + dy * dy); if (dist < (player.width / 2 + p.width / 2) * 0.9) { applyPowerUp(p.type); powerUps.splice(i, 1); } }
     if (player.parryActive && boss && bossLasers.length > 0) { const parryRadius = player.width / 2 * 1.5; for (let i = bossLasers.length - 1; i >= 0; i--) { const l = bossLasers[i]; const dx = player.x - l.x, dy = player.y - l.y; const dist = Math.sqrt(dx * dx + dy * dy); if (dist < (parryRadius + l.width / 2)) { bossLasers.splice(i, 1); console.log("¡Parry exitoso!"); player.parryActive = false; player.parryTimer = 0; break; } } }
     if (!player.invincible) {
@@ -376,7 +451,7 @@ function updateAbilityButtonUI() {
             parryButton.style.opacity = '1';
             parryButton.style.cursor = 'pointer';
         }
-    } else { // 'momo' phase
+    } else { 
         parryButton.textContent = 'BARRERA';
         if (player.parryCooldown > 0) {
             parryButton.style.opacity = '0.4';
@@ -408,6 +483,8 @@ function startGame() {
     isPaused = false;
     gameRunning = true;
     
+    isPlayerLocked = false;
+
     startButton.style.display = 'none'; instructionsDiv.style.display = 'none';
     settingsButton.style.display = 'none'; pauseButton.style.display = 'flex';
 
