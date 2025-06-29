@@ -13,19 +13,13 @@ html, body {
     transition: background-color 0.5s ease;
 }
 
-/* Contenedor del Juego (oculto al inicio) */
-#game-wrapper, #touch-controls {
-    display: none; /* Inicia oculto, se muestra con JS */
-    flex-direction: column;
-    align-items: center;
-}
-#game-wrapper { width: 100%; max-width: 800px; margin-bottom: 10px; }
-#touch-controls { width: 100%; max-width: 500px; }
+/* =============================================================== */
+/* ================ ESTILOS DE VISTAS Y MENÚS NUEVOS ================ */
+/* =============================================================== */
 
-
-/* ========= VISTA DEL MENÚ PRINCIPAL (Visible al inicio) ========= */
+/* Contenedor del Menú Principal */
 #main-menu-view {
-    display: flex; /* Visible por defecto */
+    display: flex; /* Se muestra por defecto */
     flex-direction: column;
     justify-content: center;
     align-items: center;
@@ -37,49 +31,56 @@ html, body {
     left: 0;
     z-index: 100;
     background-color: #111;
+    padding: 20px;
+    box-sizing: border-box;
 }
 
 .main-title {
-    font-size: 3.5em;
+    font-size: 4em;
     color: #0f0; 
     text-shadow: 0 0 8px #0f0, 0 0 15px #0f0;
-    margin-bottom: 30px;
+    margin-bottom: 40px;
+    font-family: 'Courier New', Courier, monospace;
 }
 
-#startButton {
+.menu-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+#main-start-button, #edits-button {
     padding: 15px 30px;
     font-size: 1.5em;
     cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    font-weight: bold;
+}
+
+#main-start-button {
     background-color: #0a0;
     color: white;
     border: 2px solid #0f0;
-    border-radius: 8px;
     box-shadow: 0 0 10px #0f0;
-    transition: all 0.2s ease;
 }
-#startButton:hover {
+#main-start-button:hover {
     background-color: #0c0;
     transform: scale(1.05);
 }
 
-#editsButton {
-    margin-top: 20px;
-    padding: 10px 22px;
-    font-size: 1.1em;
-    cursor: pointer;
+#edits-button {
     background-color: #ff8c00; /* Naranja */
     color: white;
-    border: 2px solid #ffae00; /* Naranja más claro */
-    border-radius: 8px;
+    border: 2px solid #ffae00;
     box-shadow: 0 0 10px #ffae00;
-    transition: all 0.2s ease;
 }
-#editsButton:hover {
+#edits-button:hover {
     background-color: #ffa500;
     transform: scale(1.05);
 }
 
-#settings-button-main {
+#main-settings-button {
     position: absolute;
     top: 20px;
     right: 20px;
@@ -90,27 +91,31 @@ html, body {
     cursor: pointer;
     padding: 0;
 }
-#settings-button-main img {
+#main-settings-button img {
     width: 100%;
     height: 100%;
     filter: drop-shadow(0 0 3px #0f0);
     transition: filter 0.2s ease, transform 0.2s ease;
 }
-#settings-button-main:hover img {
+#main-settings-button:hover img {
     transform: rotate(45deg);
     filter: drop-shadow(0 0 6px #fff) brightness(1.2);
 }
-/* ============================================================== */
 
+#main-instructions {
+    position: absolute;
+    bottom: 20px;
+    color: #ccc;
+    font-size: 0.9em;
+    width: 90%;
+    max-width: 500px;
+}
 
-/* ========= VISTA DE LA SECCIÓN DE EDITS ========= */
+/* Vista de la Sección de Edits */
 #edits-view {
     display: none; /* Oculta por defecto */
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    position: fixed; top: 0; left: 0;
+    width: 100%; height: 100%;
     background: #111;
     z-index: 110;
     flex-direction: column;
@@ -120,7 +125,7 @@ html, body {
     box-sizing: border-box;
 }
 
-#back-button {
+#back-to-main-menu-button, #back-to-edits-button {
     position: absolute;
     top: 25px;
     left: 25px;
@@ -132,99 +137,49 @@ html, body {
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.2s ease;
+    z-index: 130;
 }
-#back-button:hover {
+#back-to-main-menu-button:hover, #back-to-edits-button:hover {
     background-color: #ff8c00;
     color: white;
 }
 
 #edits-view h2 {
-    color: #0f0;
-    text-shadow: 0 0 5px #0f0;
-    margin: 0 0 25px 0;
-    text-align: center;
-    font-size: 2em;
-    font-family: 'Courier New', Courier, monospace;
+    color: #0f0; text-shadow: 0 0 5px #0f0;
+    margin: 0 0 25px 0; text-align: center;
+    font-size: 2em; font-family: 'Courier New', Courier, monospace;
 }
 
 .video-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
     gap: 15px;
-    width: 100%;
-    max-width: 800px;
-    max-height: 70vh;
-    overflow-y: auto;
-    padding: 10px;
+    width: 100%; max-width: 800px;
+    max-height: 70vh; overflow-y: auto; padding: 10px;
 }
 
 .video-item {
-    background-color: #2a2a2a;
-    border: 1px solid #444;
-    color: #eee;
-    padding: 20px;
-    text-align: center;
-    text-decoration: none;
-    font-size: 1.1em;
-    border-radius: 8px;
-    transition: background-color 0.2s, color 0.2s, transform 0.2s, box-shadow 0.2s;
-    cursor: pointer; /* Añadido para indicar que es clickeable */
+    background-color: #2a2a2a; border: 1px solid #444;
+    color: #eee; padding: 20px; text-align: center;
+    text-decoration: none; font-size: 1.1em; border-radius: 8px;
+    transition: all 0.2s ease; cursor: pointer;
 }
 .video-item:hover {
-    background-color: #0f0;
-    color: #111;
+    background-color: #0f0; color: #111;
     transform: translateY(-5px);
     box-shadow: 0 5px 15px rgba(0, 255, 0, 0.4);
 }
-/* =================================================== */
 
-
-/* Estilos del Juego (sin cambios significativos, solo ajustes de visibilidad) */
-.game-header { display: flex; align-items: center; justify-content: space-between; width: 95%; margin-bottom: 10px; padding: 0 5px; box-sizing: border-box; }
-h1#game-title { color: #0f0; text-shadow: 0 0 5px #0f0; margin: 0; font-size: 1.3em; text-align: left; flex-grow: 1; transition: color 0.5s ease, text-shadow 0.5s ease; }
-#game-container { position: relative; border: 2px solid #0f0; box-shadow: 0 0 10px #0f0; width: 95%; aspect-ratio: 16 / 9; max-height: 80vh; transition: border-color 0.5s ease, box-shadow 0.5s ease; }
-#transitionVideo { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 500; background-color: #000; }
-canvas { display: block; background-color: #000; width: 100%; height: 100%; }
-#ui { background: linear-gradient(135deg, rgba(20, 30, 40, 0.85), rgba(40, 50, 60, 0.75)); color: #fff; padding: 8px 12px; border-radius: 5px; border: 1px solid rgba(100, 150, 200, 0.6); box-shadow: 0 0 8px rgba(100, 150, 255, 0.4), inset 0 0 5px rgba(0, 0, 0, 0.3); font-family: 'Courier New', Courier, monospace; font-size: 0.9em; display: flex; flex-direction: column; gap: 4px; pointer-events: none; text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.8); white-space: nowrap; flex-shrink: 0; }
-#ui div { margin: 0; padding: 0; }
-#score::before { content: "\2605\00a0"; color: #FFD700; } #score { color: #ffffaa; }
-#lives::before { content: "\2764\00a0"; color: #FF4444; } #lives { color: #ffaaaa; }
-#level::before { content: "\21EA\00a0"; color: #88ccff; } #level { color: #aaaaff; }
-#instructions { margin-top: 20px; color: #ccc; font-size: 0.8em; text-align: center; width: 90%; max-width: 400px; }
-#dpad { display: grid; grid-template-areas: ". up ." "left . right"; grid-template-columns: 60px 60px 60px; grid-template-rows: 60px 60px; gap: 5px; }
-.dpad-button { background-color: rgba(0, 153, 0, 0.6); border: 2px solid #0f0; color: #fff; font-size: 1.8em; border-radius: 10px; display: flex; justify-content: center; align-items: center; cursor: pointer; touch-action: manipulation; transition: background-color 0.1s ease; }
-.dpad-button:active { background-color: rgba(0, 255, 0, 0.8); }
-#dpad-up { grid-area: up; } #dpad-left { grid-area: left; } #dpad-right { grid-area: right; }
-#action-buttons { display: flex; flex-direction: column-reverse; align-items: center; gap: 10px; }
-#shoot-button { width: 110px; height: 90px; background-color: rgba(204, 0, 0, 0.6); border: 2px solid #f55; color: #fff; font-size: 1em; font-weight: bold; border-radius: 20px; cursor: pointer; touch-action: manipulation; transition: background-color 0.1s ease; }
-#shoot-button:active { background-color: rgba(255, 51, 51, 0.8); }
-#parry-button { width: 90px; height: 50px; background-color: rgba(0, 102, 255, 0.6); border: 2px solid #5af; color: #fff; font-size: 0.9em; font-weight: bold; border-radius: 15px; cursor: pointer; touch-action: manipulation; transition: background-color 0.1s ease, opacity 0.2s ease; }
-#parry-button:active { background-color: rgba(51, 153, 255, 0.8); }
-audio { display: none; }
-#pause-button { position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px; background-color: rgba(255, 255, 255, 0.2); border: 2px solid #fff; border-radius: 50%; cursor: pointer; z-index: 100; display: none; padding: 0; justify-content: center; align-items: center; }
-#pause-button img { width: 60%; height: 60%; filter: invert(1); }
-#pause-button:hover { background-color: rgba(255, 255, 255, 0.4); }
-
-/* Resto de estilos (modales, etc.) */
-#settings-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.85); z-index: 200; display: none; justify-content: center; align-items: center; color: #fff; font-family: 'Courier New', Courier, monospace; }
-.settings-content { background: linear-gradient(145deg, #182838, #283848); padding: 25px 35px; border: 2px solid #0f0; box-shadow: 0 0 20px rgba(0, 255, 0, 0.5); border-radius: 10px; text-align: center; width: 90%; max-width: 400px; }
-/* ... (resto del CSS sin cambios) ... */
-
-/* ========= VISTA DEL REPRODUCTOR DE VIDEO (NUEVO) ========= */
+/* Vista del Reproductor de Video */
 #video-player-view {
     display: none; /* Oculto por defecto */
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    position: fixed; top: 0; left: 0;
+    width: 100%; height: 100%;
     background: #000;
-    z-index: 120; /* Por encima de la vista de edits */
+    z-index: 120;
     flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    padding: 20px;
-    box-sizing: border-box;
+    justify-content: center; align-items: center;
+    padding: 20px; box-sizing: border-box;
 }
 
 #edit-video-player {
@@ -235,19 +190,120 @@ audio { display: none; }
     box-shadow: 0 0 15px #0f0;
 }
 
-#back-from-video-button {
-    margin-top: 20px;
-    padding: 10px 22px;
-    font-size: 1.1em;
-    cursor: pointer;
-    background: none;
-    border: 2px solid #ff8c00;
-    color: #ff8c00;
-    border-radius: 8px;
-    transition: all 0.2s ease;
+/* =============================================================== */
+/* ============== ESTILOS DEL JUEGO (MODIFICADOS) ================ */
+/* =============================================================== */
+
+/* Contenedor del Juego (ahora una vista separada) */
+#game-wrapper {
+    display: none; /* Oculto por defecto, se muestra con JS */
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 800px;
+    flex-shrink: 0; 
+    margin-bottom: 10px; 
 }
 
-#back-from-video-button:hover {
-    background-color: #ff8c00;
-    color: white;
+/* El resto de los estilos del juego, UI y controles se mantienen casi igual */
+.game-header {
+    display: flex; align-items: center; justify-content: space-between;
+    width: 95%; margin-bottom: 10px; padding: 0 5px; box-sizing: border-box;
 }
+
+h1#game-title {
+    color: #0f0; text-shadow: 0 0 5px #0f0; margin: 0;
+    font-size: 1.3em; text-align: left; flex-grow: 1;
+    transition: color 0.5s ease, text-shadow 0.5s ease; 
+}
+
+#game-container {
+    position: relative; border: 2px solid #0f0; box-shadow: 0 0 10px #0f0;
+    width: 95%; aspect-ratio: 16 / 9; max-height: 80vh;
+    transition: border-color 0.5s ease, box-shadow 0.5s ease;
+}
+
+#transitionVideo {
+    display: none; position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%; object-fit: cover; z-index: 500; background-color: #000;
+}
+
+canvas { display: block; background-color: #000; width: 100%; height: 100%; }
+
+#ui {
+    background: linear-gradient(135deg, rgba(20, 30, 40, 0.85), rgba(40, 50, 60, 0.75));
+    color: #fff; padding: 8px 12px; border-radius: 5px;
+    border: 1px solid rgba(100, 150, 200, 0.6);
+    box-shadow: 0 0 8px rgba(100, 150, 255, 0.4), inset 0 0 5px rgba(0, 0, 0, 0.3);
+    font-family: 'Courier New', Courier, monospace; font-size: 0.9em;
+    display: flex; flex-direction: column; gap: 4px; pointer-events: none;
+    text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.8); white-space: nowrap; flex-shrink: 0;
+}
+
+#ui div { margin: 0; padding: 0; }
+#score::before { content: "\2605\00a0"; color: #FFD700; }
+#score { color: #ffffaa; }
+#lives::before { content: "\2764\00a0"; color: #FF4444; }
+#lives { color: #ffaaaa; }
+#level::before { content: "\21EA\00a0"; color: #88ccff; }
+#level { color: #aaaaff; }
+
+/* Controles Táctiles */
+#touch-controls {
+    display: none; /* Oculto por defecto */
+    flex-direction: row; /* Modificado para que siempre sea fila */
+    justify-content: space-between; align-items: center;
+    width: 100%; max-width: 500px; padding: 15px 20px; box-sizing: border-box;
+    flex-shrink: 0; user-select: none; -webkit-user-select: none;
+}
+
+#dpad { display: grid; grid-template-areas: ". up ." "left . right"; grid-template-columns: 60px 60px 60px; grid-template-rows: 60px 60px; gap: 5px; }
+.dpad-button { background-color: rgba(0, 153, 0, 0.6); border: 2px solid #0f0; color: #fff; font-size: 1.8em; border-radius: 10px; display: flex; justify-content: center; align-items: center; cursor: pointer; touch-action: manipulation; transition: background-color 0.1s ease; }
+.dpad-button:active { background-color: rgba(0, 255, 0, 0.8); }
+#dpad-up { grid-area: up; }
+#dpad-left { grid-area: left; }
+#dpad-right { grid-area: right; }
+#action-buttons { display: flex; flex-direction: column-reverse; align-items: center; gap: 10px; }
+#shoot-button { width: 110px; height: 90px; background-color: rgba(204, 0, 0, 0.6); border: 2px solid #f55; color: #fff; font-size: 1em; font-weight: bold; border-radius: 20px; cursor: pointer; touch-action: manipulation; transition: background-color 0.1s ease; }
+#shoot-button:active { background-color: rgba(255, 51, 51, 0.8); }
+#parry-button { width: 90px; height: 50px; background-color: rgba(0, 102, 255, 0.6); border: 2px solid #5af; color: #fff; font-size: 0.9em; font-weight: bold; border-radius: 15px; cursor: pointer; touch-action: manipulation; transition: background-color 0.1s ease, opacity 0.2s ease; }
+#parry-button:active { background-color: rgba(51, 153, 255, 0.8); }
+
+audio { display: none; }
+
+/* PAUSA, AJUSTES Y MODAL (sin cambios) */
+#pause-button { position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px; background-color: rgba(255, 255, 255, 0.2); border: 2px solid #fff; border-radius: 50%; cursor: pointer; z-index: 100; display: none; padding: 0; justify-content: center; align-items: center; }
+#pause-button img { width: 60%; height: 60%; filter: invert(1); }
+#pause-button:hover { background-color: rgba(255, 255, 255, 0.4); }
+#settings-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.85); z-index: 200; display: none; justify-content: center; align-items: center; color: #fff; font-family: 'Courier New', Courier, monospace; }
+.settings-content { background: linear-gradient(145deg, #182838, #283848); padding: 25px 35px; border: 2px solid #0f0; box-shadow: 0 0 20px rgba(0, 255, 0, 0.5); border-radius: 10px; text-align: center; width: 90%; max-width: 400px; }
+.settings-content h2 { color: #0f0; margin-top: 0; margin-bottom: 25px; text-shadow: 0 0 5px #0f0; }
+.slider-container { display: flex; align-items: center; justify-content: space-between; margin: 20px 0; gap: 15px; }
+.slider-container label { font-size: 1.1em; white-space: nowrap; }
+.slider-container span { min-width: 30px; text-align: right; color: #0f0; font-weight: bold; }
+input[type=range] { -webkit-appearance: none; flex-grow: 1; background: #222; height: 8px; border-radius: 5px; border: 1px solid #444; outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 22px; height: 22px; border-radius: 50%; background: #0f0; cursor: pointer; box-shadow: 0 0 8px #0f0; }
+input[type=range]::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: #0f0; cursor: pointer; border: none; box-shadow: 0 0 8px #0f0; }
+#close-settings-button { margin-top: 20px; padding: 12px 30px; background-color: #0a0; color: white; border: 2px solid #0f0; border-radius: 5px; cursor: pointer; font-size: 1.1em; font-weight: bold; transition: all 0.2s ease; }
+#close-settings-button:hover { background-color: #0c0; box-shadow: 0 0 10px #0f0; transform: scale(1.05); }
+
+/* Temas y Dev Menu (sin cambios) */
+.madeline-theme h1#game-title { color: #ff69b4; text-shadow: 0 0 5px #ff69b4, 0 0 10px #fff; }
+.madeline-theme #game-container { border-color: #c774e8; box-shadow: 0 0 15px #c774e8; }
+#dev-menu { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(10, 20, 40, 0.9); z-index: 300; display: none; justify-content: center; align-items: center; color: #fff; font-family: 'Courier New', Courier, monospace; }
+.dev-content { background: #1a1a1a; padding: 20px; border: 2px solid #ffae00; box-shadow: 0 0 15px rgba(255, 174, 0, 0.6); border-radius: 8px; width: 90%; max-width: 550px; max-height: 90vh; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+.dev-content h2 { color: #ffae00; margin: 0 0 15px 0; text-align: center; text-shadow: 0 0 5px #ffae00; border-bottom: 1px solid #ffae00; padding-bottom: 10px; }
+/* ... (el resto de los estilos del dev-menu y media queries se mantienen igual que en tu archivo original) ... */
+.dev-section { background: #222; padding: 10px 15px; border-radius: 5px; border: 1px solid #444; }
+.dev-section h3 { margin: 0 0 10px 0; color: #ccc; font-size: 1.1em; }
+.dev-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.dev-controls-full-width { display: flex; flex-direction: column; gap: 8px; }
+.dev-content button { background-color: #333; border: 1px solid #ffae00; color: #ffae00; padding: 8px 10px; font-family: 'Courier New', Courier, monospace; cursor: pointer; border-radius: 4px; transition: background-color 0.2s, color 0.2s; font-size: 0.9em; }
+.dev-content button:hover { background-color: #ffae00; color: #111; }
+.dev-content input[type="number"], .dev-content input[type="text"] { background: #333; border: 1px solid #777; color: #eee; padding: 6px; border-radius: 4px; width: 60px; font-family: 'Courier New', Courier, monospace; }
+.dev-input-group { display: flex; align-items: center; gap: 10px; }
+.dev-input-group label { white-space: nowrap; }
+#close-dev-menu { background-color: #8B0000; border-color: #ff4444; color: #fff; font-weight: bold; }
+#close-dev-menu:hover { background-color: #ff4444; color: #111; }
+@media (min-width: 768px) { #touch-controls { display: none !important; } .main-title { font-size: 5em; } #main-instructions { font-size: 1em; } #game-wrapper { max-width: 960px; } .game-header { width: 100%; padding: 0; justify-content: flex-start; gap: 20px; } #game-container { width: 100%; height: auto; max-width: none; max-height: none; aspect-ratio: 16 / 9; } h1#game-title { font-size: 2em; } #ui { font-size: 1.1em; padding: 10px 15px; gap: 6px; } }
+@media (max-width: 360px) { .main-title { font-size: 2.5em; } #main-start-button, #edits-button { font-size: 1.2em; padding: 12px 25px; } .game-header { flex-direction: column; align-items: flex-start; gap: 5px; margin-bottom: 5px; } h1#game-title { font-size: 1.2em; } #ui { font-size: 0.8em; padding: 6px 8px; gap: 3px; } #dpad { grid-template-columns: 50px 50px 50px; grid-template-rows: 50px 50px; } .dpad-button { font-size: 1.5em; } #shoot-button { width: 100px; height: 80px; font-size: 0.9em; } #parry-button { width: 80px; height: 45px; } #touch-controls { padding: 10px 5px; } #pause-button { width: 45px; height: 45px; bottom: 15px; right: 15px;} }

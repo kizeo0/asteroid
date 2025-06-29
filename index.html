@@ -7,43 +7,20 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="game-wrapper">
-        <div class="game-header">
-            <h1 id="game-title"></h1>
-            <div id="ui">
-                <div id="score">Puntaje: 0</div>
-                <div id="lives">Vidas: 3</div>
-                <div id="level">Nivel: 1</div>
-            </div>
-        </div>
-        <div id="game-container">
-            <canvas id="gameCanvas" width="800" height="600"></canvas>
-            <video id="transitionVideo" preload="auto" src="madeline/transicion.mp4"></video>
-        </div>
-    </div>
-
-    <div id="touch-controls">
-        <div id="dpad">
-            <button class="dpad-button" id="dpad-up">▲</button>
-            <button class="dpad-button" id="dpad-left">◀</button>
-            <button class="dpad-button" id="dpad-right">▶</button>
-        </div>
-        <div id="action-buttons">
-            <button id="parry-button">BARRERA</button>
-            <button id="shoot-button">DISPARAR</button>
-        </div>
-    </div>
 
     <div id="main-menu-view">
         <h1 class="main-title">Asteroides</h1>
-        <button id="startButton">Iniciar Juego</button>
-        <button id="editsButton">Edits (Bonus)</button>
-        <button id="settings-button-main"><img src="config.png" alt="Ajustes"></button>
-        <div id="instructions"></div>
+        <div class="menu-buttons">
+            <button id="main-start-button">Iniciar Juego</button>
+            <button id="edits-button">Edits (Bonus)</button>
+        </div>
+        <button id="main-settings-button"><img src="config.png" alt="Ajustes"></button>
+        <div id="main-instructions">
+            </div>
     </div>
-    
+
     <div id="edits-view">
-        <button id="back-button">← Volver al Menú</button>
+        <button id="back-to-main-menu-button">← Volver al Menú</button>
         <h2>Edits (Bonus)</h2>
         <div class="video-grid">
             <a data-video-src="edits/belli.mp4" class="video-item">Bellingham</a>
@@ -60,7 +37,34 @@
 
     <div id="video-player-view">
         <video id="edit-video-player" controls preload="auto"></video>
-        <button id="back-from-video-button">← Volver a Edits</button>
+        <button id="back-to-edits-button">← Volver a Edits</button>
+    </div>
+
+    <div id="game-wrapper">
+        <div class="game-header">
+            <h1 id="game-title"></h1>
+            <div id="ui">
+                <div id="score">Puntaje: 0</div>
+                <div id="lives">Vidas: 3</div>
+                <div id="level">Nivel: 1</div>
+            </div>
+        </div>
+        <div id="game-container">
+            <canvas id="gameCanvas" width="800" height="600"></canvas>
+            <video id="transitionVideo" preload="auto" src="madeline/transicion.mp4"></video>
+        </div>
+    </div>
+    
+    <div id="touch-controls">
+        <div id="dpad">
+            <button class="dpad-button" id="dpad-up">▲</button>
+            <button class="dpad-button" id="dpad-left">◀</button>
+            <button class="dpad-button" id="dpad-right">▶</button>
+        </div>
+        <div id="action-buttons">
+            <button id="parry-button">BARRERA</button>
+            <button id="shoot-button">DISPARAR</button>
+        </div>
     </div>
 
     <audio id="bgMusic" src="music.mp3" preload="auto" loop></audio>
@@ -75,7 +79,7 @@
     <audio id="madelineMusic" src="madeline/segundaparte.mp3" preload="auto" loop></audio>
     <audio id="cobraSound1" src="madeline/boe.mp3" preload="auto"></audio>
     <audio id="cobraSound2" src="madeline/acabado.mp3" preload="auto"></audio>
-    <audio id="cobraSound3"src="madeline/critica.mp3" preload="auto"></audio>
+    <audio id="cobraSound3" src="madeline/critica.mp3" preload="auto"></audio>
     <audio id="grenadeSound" src="madeline/river.mp3" preload="auto"></audio>
     <audio id="cajaAbiertaSound" src="cajaabierta.mp3" preload="auto"></audio>
 
@@ -104,26 +108,39 @@
             <div class="dev-section">
                 <h3>Estado del Jugador</h3>
                 <div class="dev-controls">
-                    <div class="dev-input-group">
-                        <input type="checkbox" id="dev-godmode">
-                        <label for="dev-godmode">Modo Dios</label>
-                    </div>
-                    <div class="dev-input-group">
-                         <label for="dev-set-lives">Vidas:</label>
-                        <input type="number" id="dev-set-lives" value="3" min="0">
-                        <button id="dev-apply-lives">Aplicar</button>
-                    </div>
-                     <div class="dev-input-group">
-                        <label for="dev-set-score">Puntaje:</label>
-                        <input type="number" id="dev-set-score" value="0" min="0">
-                        <button id="dev-apply-score">Aplicar</button>
-                    </div>
+                    <div class="dev-input-group"><input type="checkbox" id="dev-godmode"><label for="dev-godmode">Modo Dios</label></div>
+                    <div class="dev-input-group"><label for="dev-set-lives">Vidas:</label><input type="number" id="dev-set-lives" value="3" min="0"><button id="dev-apply-lives">Aplicar</button></div>
+                    <div class="dev-input-group"><label for="dev-set-score">Puntaje:</label><input type="number" id="dev-set-score" value="0" min="0"><button id="dev-apply-score">Aplicar</button></div>
+                </div>
+            </div>
+            <div class="dev-section">
+                <h3>Invocaciones</h3>
+                <div class="dev-controls">
+                    <button id="dev-spawn-momo-1">Invocar Jefe MOMO (Nv.1)</button>
+                    <button id="dev-spawn-momo-2">Invocar Jefe MOMO (Nv.2)</button>
+                    <button id="dev-spawn-cobra">Invocar Jefe COBRA</button>
+                    <button id="dev-spawn-zom">Invocar 'Zom'</button>
+                    <button id="dev-clear-enemies">Limpiar Enemigos</button>
+                </div>
+            </div>
+            <div class="dev-section">
+                <h3>Progresión y Fases</h3>
+                <div class="dev-controls">
+                    <button id="dev-next-level">Avanzar Nivel (+20 pts)</button>
+                    <button id="dev-start-madeline">Iniciar Fase Madeline</button>
+                    <button id="dev-complete-cycle">Completar Ciclo Actual</button>
+                </div>
+            </div>
+            <div class="dev-section">
+                <h3>Acciones del Juego</h3>
+                <div class="dev-controls">
+                    <button id="dev-game-over">Forzar Game Over</button>
+                    <button id="dev-hit-player">Dañar Jugador</button>
                 </div>
             </div>
             <button id="close-dev-menu">Cerrar Menú (Tecla 4)</button>
         </div>
     </div>
-    
     <script src="game.js"></script>
 </body>
 </html>
