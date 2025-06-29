@@ -59,11 +59,11 @@
 
     <div id="settings-modal">
         <div class="settings-content">
-            <h2>Ajustes de Sonido</h2>
+            <h2 id="settings-title">Ajustes de Sonido</h2>
             <div class="slider-container">
                 <label for="music-volume-slider">Música:</label>
-                <input type="range" id="music-volume-slider" min="0" max="100" value="20">
-                <span id="music-volume-label">20</span>
+                <input type="range" id="music-volume-slider" min="0" max="100" value="70">
+                <span id="music-volume-label">70</span>
             </div>
             <div class="slider-container">
                 <label for="sfx-volume-slider">Efectos:</label>
@@ -74,6 +74,61 @@
         </div>
     </div>
 
+    <div id="dev-menu">
+        <div class="dev-content">
+            <h2>MENÚ DE DESARROLLADOR</h2>
+
+            <div class="dev-section">
+                <h3>Estado del Jugador</h3>
+                <div class="dev-controls">
+                    <div class="dev-input-group">
+                        <input type="checkbox" id="dev-godmode">
+                        <label for="dev-godmode">Modo Dios</label>
+                    </div>
+                    <div class="dev-input-group">
+                         <label for="dev-set-lives">Vidas:</label>
+                        <input type="number" id="dev-set-lives" value="3" min="0">
+                        <button id="dev-apply-lives">Aplicar</button>
+                    </div>
+                     <div class="dev-input-group">
+                        <label for="dev-set-score">Puntaje:</label>
+                        <input type="number" id="dev-set-score" value="0" min="0">
+                        <button id="dev-apply-score">Aplicar</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dev-section">
+                <h3>Invocaciones</h3>
+                <div class="dev-controls">
+                    <button id="dev-spawn-momo-1">Invocar Jefe MOMO (Nv.1)</button>
+                    <button id="dev-spawn-momo-2">Invocar Jefe MOMO (Nv.2)</button>
+                    <button id="dev-spawn-cobra">Invocar Jefe COBRA</button>
+                    <button id="dev-spawn-zom">Invocar 'Zom'</button>
+                    <button id="dev-clear-enemies">Limpiar Enemigos</button>
+                </div>
+            </div>
+
+            <div class="dev-section">
+                <h3>Progresión y Fases</h3>
+                <div class="dev-controls">
+                    <button id="dev-next-level">Avanzar Nivel (+20 pts)</button>
+                    <button id="dev-start-madeline">Iniciar Fase Madeline</button>
+                    <button id="dev-complete-cycle">Completar Ciclo Actual</button>
+                </div>
+            </div>
+            
+            <div class="dev-section">
+                <h3>Acciones del Juego</h3>
+                <div class="dev-controls">
+                     <button id="dev-game-over">Forzar Game Over</button>
+                     <button id="dev-hit-player">Dañar Jugador</button>
+                </div>
+            </div>
+
+            <button id="close-dev-menu">Cerrar Menú (Tecla 4)</button>
+        </div>
+    </div>
     <script src="game.js"></script>
 </body>
 </html>
