@@ -7,10 +7,11 @@ html, body {
     color: #eee;
     font-family: 'Arial', sans-serif;
     overflow: hidden;
+    
+    /* CAMBIO CLAVE: Hacemos del body un contenedor flex en columna. */
+    /* Esto nos permitirá controlar la distribución vertical de las vistas. */
     display: flex;
-    justify-content: center;
-    align-items: center;
-    transition: background-color 0.5s ease;
+    flex-direction: column;
 }
 
 /* =============================================================== */
@@ -18,8 +19,9 @@ html, body {
 /* =============================================================== */
 
 /* Contenedor del Menú Principal */
+/* No necesita cambios, position:fixed lo saca del flujo normal */
 #main-menu-view {
-    display: flex; /* Se muestra por defecto */
+    display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
@@ -111,9 +113,9 @@ html, body {
     max-width: 500px;
 }
 
-/* Vista de la Sección de Edits */
+/* Vista de la Sección de Edits (sin cambios) */
 #edits-view {
-    display: none; /* Oculta por defecto */
+    display: none; 
     position: fixed; top: 0; left: 0;
     width: 100%; height: 100%;
     background: #111;
@@ -170,9 +172,9 @@ html, body {
     box-shadow: 0 5px 15px rgba(0, 255, 0, 0.4);
 }
 
-/* Vista del Reproductor de Video */
+/* Vista del Reproductor de Video (sin cambios) */
 #video-player-view {
-    display: none; /* Oculto por defecto */
+    display: none; 
     position: fixed; top: 0; left: 0;
     width: 100%; height: 100%;
     background: #000;
@@ -194,18 +196,22 @@ html, body {
 /* ============== ESTILOS DEL JUEGO (MODIFICADOS) ================ */
 /* =============================================================== */
 
-/* Contenedor del Juego (ahora una vista separada) */
+/* Contenedor del Juego */
 #game-wrapper {
     display: none; /* Oculto por defecto, se muestra con JS */
     flex-direction: column;
     align-items: center;
     width: 100%;
     max-width: 800px;
-    flex-shrink: 0; 
-    margin-bottom: 10px; 
+    
+    /* CAMBIO CLAVE: Le decimos a este contenedor que CREZCA para llenar el espacio vertical. */
+    flex-grow: 1; 
+
+    /* CAMBIO CLAVE: Truco de Flexbox para que los hijos con aspect-ratio se comporten bien. */
+    min-height: 0; 
 }
 
-/* El resto de los estilos del juego, UI y controles se mantienen casi igual */
+/* El resto de los estilos del juego, UI se mantienen casi igual */
 .game-header {
     display: flex; align-items: center; justify-content: space-between;
     width: 95%; margin-bottom: 10px; padding: 0 5px; box-sizing: border-box;
@@ -219,7 +225,10 @@ h1#game-title {
 
 #game-container {
     position: relative; border: 2px solid #0f0; box-shadow: 0 0 10px #0f0;
-    width: 95%; aspect-ratio: 16 / 9; max-height: 80vh;
+    width: 95%; 
+    /* CAMBIO CLAVE: El aspect-ratio ahora funcionará correctamente dentro del game-wrapper flexible. */
+    aspect-ratio: 16 / 9; 
+    /* CAMBIO CLAVE: Eliminamos max-height para que sea totalmente flexible */
     transition: border-color 0.5s ease, box-shadow 0.5s ease;
 }
 
@@ -251,10 +260,15 @@ canvas { display: block; background-color: #000; width: 100%; height: 100%; }
 /* Controles Táctiles */
 #touch-controls {
     display: none; /* Oculto por defecto */
-    flex-direction: row; /* Modificado para que siempre sea fila */
+    flex-direction: row; 
     justify-content: space-between; align-items: center;
-    width: 100%; max-width: 500px; padding: 15px 20px; box-sizing: border-box;
-    flex-shrink: 0; user-select: none; -webkit-user-select: none;
+    width: 100%; max-width: 500px; padding: 10px 20px 15px 20px; /* Ajuste de padding */
+    box-sizing: border-box;
+    
+    /* CAMBIO CLAVE: Evita que los controles se encojan. */
+    flex-shrink: 0; 
+    
+    user-select: none; -webkit-user-select: none;
 }
 
 #dpad { display: grid; grid-template-areas: ". up ." "left . right"; grid-template-columns: 60px 60px 60px; grid-template-rows: 60px 60px; gap: 5px; }
@@ -269,9 +283,8 @@ canvas { display: block; background-color: #000; width: 100%; height: 100%; }
 #parry-button { width: 90px; height: 50px; background-color: rgba(0, 102, 255, 0.6); border: 2px solid #5af; color: #fff; font-size: 0.9em; font-weight: bold; border-radius: 15px; cursor: pointer; touch-action: manipulation; transition: background-color 0.1s ease, opacity 0.2s ease; }
 #parry-button:active { background-color: rgba(51, 153, 255, 0.8); }
 
+/* --- El resto del CSS no necesita cambios --- */
 audio { display: none; }
-
-/* PAUSA, AJUSTES Y MODAL (sin cambios) */
 #pause-button { position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px; background-color: rgba(255, 255, 255, 0.2); border: 2px solid #fff; border-radius: 50%; cursor: pointer; z-index: 100; display: none; padding: 0; justify-content: center; align-items: center; }
 #pause-button img { width: 60%; height: 60%; filter: invert(1); }
 #pause-button:hover { background-color: rgba(255, 255, 255, 0.4); }
@@ -286,14 +299,11 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: 
 input[type=range]::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: #0f0; cursor: pointer; border: none; box-shadow: 0 0 8px #0f0; }
 #close-settings-button { margin-top: 20px; padding: 12px 30px; background-color: #0a0; color: white; border: 2px solid #0f0; border-radius: 5px; cursor: pointer; font-size: 1.1em; font-weight: bold; transition: all 0.2s ease; }
 #close-settings-button:hover { background-color: #0c0; box-shadow: 0 0 10px #0f0; transform: scale(1.05); }
-
-/* Temas y Dev Menu (sin cambios) */
 .madeline-theme h1#game-title { color: #ff69b4; text-shadow: 0 0 5px #ff69b4, 0 0 10px #fff; }
 .madeline-theme #game-container { border-color: #c774e8; box-shadow: 0 0 15px #c774e8; }
 #dev-menu { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(10, 20, 40, 0.9); z-index: 300; display: none; justify-content: center; align-items: center; color: #fff; font-family: 'Courier New', Courier, monospace; }
 .dev-content { background: #1a1a1a; padding: 20px; border: 2px solid #ffae00; box-shadow: 0 0 15px rgba(255, 174, 0, 0.6); border-radius: 8px; width: 90%; max-width: 550px; max-height: 90vh; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
 .dev-content h2 { color: #ffae00; margin: 0 0 15px 0; text-align: center; text-shadow: 0 0 5px #ffae00; border-bottom: 1px solid #ffae00; padding-bottom: 10px; }
-/* ... (el resto de los estilos del dev-menu y media queries se mantienen igual que en tu archivo original) ... */
 .dev-section { background: #222; padding: 10px 15px; border-radius: 5px; border: 1px solid #444; }
 .dev-section h3 { margin: 0 0 10px 0; color: #ccc; font-size: 1.1em; }
 .dev-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
@@ -305,5 +315,5 @@ input[type=range]::-moz-range-thumb { width: 22px; height: 22px; border-radius: 
 .dev-input-group label { white-space: nowrap; }
 #close-dev-menu { background-color: #8B0000; border-color: #ff4444; color: #fff; font-weight: bold; }
 #close-dev-menu:hover { background-color: #ff4444; color: #111; }
-@media (min-width: 768px) { #touch-controls { display: none !important; } .main-title { font-size: 5em; } #main-instructions { font-size: 1em; } #game-wrapper { max-width: 960px; } .game-header { width: 100%; padding: 0; justify-content: flex-start; gap: 20px; } #game-container { width: 100%; height: auto; max-width: none; max-height: none; aspect-ratio: 16 / 9; } h1#game-title { font-size: 2em; } #ui { font-size: 1.1em; padding: 10px 15px; gap: 6px; } }
+@media (min-width: 768px) { #touch-controls { display: none !important; } .main-title { font-size: 5em; } #main-instructions { font-size: 1em; } #game-wrapper { max-width: 960px; /* CAMBIO: Se necesita centrar horizontalmente de nuevo */ margin: 0 auto; } .game-header { width: 100%; padding: 0; justify-content: flex-start; gap: 20px; } #game-container { width: 100%; height: auto; max-width: none; max-height: none; aspect-ratio: 16 / 9; } h1#game-title { font-size: 2em; } #ui { font-size: 1.1em; padding: 10px 15px; gap: 6px; } }
 @media (max-width: 360px) { .main-title { font-size: 2.5em; } #main-start-button, #edits-button { font-size: 1.2em; padding: 12px 25px; } .game-header { flex-direction: column; align-items: flex-start; gap: 5px; margin-bottom: 5px; } h1#game-title { font-size: 1.2em; } #ui { font-size: 0.8em; padding: 6px 8px; gap: 3px; } #dpad { grid-template-columns: 50px 50px 50px; grid-template-rows: 50px 50px; } .dpad-button { font-size: 1.5em; } #shoot-button { width: 100px; height: 80px; font-size: 0.9em; } #parry-button { width: 80px; height: 45px; } #touch-controls { padding: 10px 5px; } #pause-button { width: 45px; height: 45px; bottom: 15px; right: 15px;} }
