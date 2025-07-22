@@ -198,7 +198,39 @@ function updateGrenades() { for (let i = grenades.length - 1; i >= 0; i--) { con
 function spawnNormalEnemy() { if (gamePhase !== 'momo' || (boss && boss.state !== 'leaving')) return; const difficultyMultiplier = 1 + (gameCycle - 1) * 0.1; const type = Math.random() < 0.5 ? 'lex' : 'mau'; const edge = Math.floor(Math.random() * 4); const w = canvas.width, h = canvas.height; const margin = ENEMY_SIZE * 1.5; let x, y; if (edge === 0) { x = Math.random() * w; y = -margin; } else if (edge === 1) { x = w + margin; y = Math.random() * h; } else if (edge === 2) { x = Math.random() * w; y = h + margin; } else { x = -margin; y = Math.random() * h; } const angleToCenter = Math.atan2(h / 2 - y, w / 2 - x); const angleVariation = (Math.random() - 0.5) * (Math.PI / 2); const angle = angleToCenter + angleVariation; const speed = (ENEMY_SPEED_MIN + Math.random() * (ENEMY_SPEED_MAX - ENEMY_SPEED_MIN) + (level * 0.08)) * difficultyMultiplier; enemies.push({ x: x, y: y, width: ENEMY_SIZE, height: ENEMY_SIZE, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, type: type, image: enemyImages[type], isFrozen: false, frozenTimer: 0 }); }
 function spawnZomEnemy() { if (gamePhase !== 'momo' || (boss && boss.state !== 'leaving')) return false; if (zomsSpawnedThisLevel >= MAX_ZOMS_PER_LEVEL && !isGodMode) return false; const edge = Math.floor(Math.random() * 4); const w = canvas.width, h = canvas.height; const margin = ZOM_SIZE * 1.5; let x, y; if (edge === 0) { x = Math.random() * w; y = -margin; } else if (edge === 1) { x = w + margin; y = Math.random() * h; } else if (edge === 2) { x = Math.random() * w; y = h + margin; } else { x = -margin; y = Math.random() * h; } zomEnemies.push({ x: x, y: y, width: ZOM_SIZE, height: ZOM_SIZE, vx: 0, vy: 0, type: 'zom', image: zomImg, isFrozen: false, frozenTimer: 0 }); zomsSpawnedThisLevel++; playSound(zomSound); return true; }
 function scheduleLevelZoms() { if (gamePhase !== 'momo') return; setTimeout(() => spawnZomEnemy(), 1500); setTimeout(() => spawnZomEnemy(), 3500); }
-function updateNormalEnemies() { if (gamePhase !== 'momo') return; if (!boss || boss.state === 'leaving') { enemySpawnCounter++; const maxEnemies = 10 + level; if (enemySpawnCounter >= enemySpawnRate && enemies.length < maxEnemies) { spawnNormalEnemy(); enemySpawnCounter = 0; } } for (let i = enemies.length - 1; i >= 0; i--) { const e = enemies[i]; if (e.isFrozen) { e.frozenTimer--; if (e.frozenTimer <= 0) { playSound(killSound); score += POINTS_PER_ENEMY; enemyKillCount++; updateScoreAndLevel(); if (enemyKillCount > 0 && enemyKillCount % BOSS_KILL_THRESHOLD === 0 && (!boss || boss.state === 'leaving')) { const bossAppearanceLevel = Math.floor(enemyKillCount / BOSS_KILL_THRESHOLD); spawnBoss(bossAppearanceLevel); } enemies.splice(i, 1); } } else { e.x += e.vx; e.y += e.vy; wrapAround(e); } } }
+function updateNormalEnemies() {
+    if (gamePhase !== 'momo') return;
+    if (!boss || boss.state === 'leaving') {
+        enemySpawnCounter++;
+        const maxEnemies = 10 + level;
+        if (enemySpawnCounter >= enemySpawnRate && enemies.length < maxEnemies) {
+            spawnNormalEnemy();
+            enemySpawnCounter = 0;
+        }
+    }
+    for (let i = enemies.length - 1; i >= 0; i--) {
+        const e = enemies[i];
+        if (e.isFrozen) {
+            e.frozenTimer--;
+            if (e.frozenTimer <= 0) {
+                playSound(killSound);
+                score += POINTS_PER_ENEMY;
+                enemyKillCount++;
+                updateScoreAndLevel();
+                if (enemyKillCount > 0 && enemyKillCount % BOSS_KILL_THRESHOLD === 0 && (!boss || boss.state === 'leaving')) {
+                    const bossAppearanceLevel = Math.floor(enemyKillCount / BOSS_KILL_THRESHOLD);
+                    spawnBoss(bossAppearanceLevel);
+                    return; // FIX: Exit function since the enemies array is now cleared by the boss spawn.
+                }
+                enemies.splice(i, 1);
+            }
+        } else {
+            e.x += e.vx;
+            e.y += e.vy;
+            wrapAround(e);
+        }
+    }
+}
 function updateZomEnemies() { if (gamePhase !== 'momo') return; for (let i = zomEnemies.length - 1; i >= 0; i--) { const z = zomEnemies[i]; if (z.isFrozen) { z.frozenTimer--; if (z.frozenTimer <= 0) { playSound(killSound); score += POINTS_PER_ZOM; updateScoreAndLevel(); zomEnemies.splice(i, 1); } } else { const dx = player.x - z.x; const dy = player.y - z.y; const angleToPlayer = Math.atan2(dy, dx); z.vx = Math.cos(angleToPlayer) * ZOM_SPEED; z.vy = Math.sin(angleToPlayer) * ZOM_SPEED; z.x += z.vx; z.y += z.vy; wrapAround(z); } } }
 function spawnPowerUp() {
     const padding = POWERUP_SIZE * 1.5;
@@ -253,7 +285,26 @@ function checkCollisions() {
             if (hit) continue;
         } 
         else if (gamePhase === 'momo') {
-            for (let j = enemies.length - 1; j >= 0; j--) { if (!enemies[j]) continue; const e = enemies[j]; const dx = l.x - e.x, dy = l.y - e.y; const dist = Math.sqrt(dx * dx + dy * dy); if (dist < (l.height / 2 + e.width / 2) * 0.85) { lasers.splice(i, 1); enemies.splice(j, 1); playSound(killSound); score += POINTS_PER_ENEMY; enemyKillCount++; updateScoreAndLevel(); if (enemyKillCount > 0 && enemyKillCount % BOSS_KILL_THRESHOLD === 0 && (!boss || boss.state === 'leaving')) { const bossAppearanceLevel = Math.floor(enemyKillCount / BOSS_KILL_THRESHOLD); spawnBoss(bossAppearanceLevel); } break; } }
+            for (let j = enemies.length - 1; j >= 0; j--) {
+                if (!enemies[j]) continue;
+                const e = enemies[j];
+                const dx = l.x - e.x, dy = l.y - e.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < (l.height / 2 + e.width / 2) * 0.85) {
+                    lasers.splice(i, 1);
+                    enemies.splice(j, 1);
+                    playSound(killSound);
+                    score += POINTS_PER_ENEMY;
+                    enemyKillCount++;
+                    updateScoreAndLevel();
+                    if (enemyKillCount > 0 && enemyKillCount % BOSS_KILL_THRESHOLD === 0 && (!boss || boss.state === 'leaving')) {
+                        const bossAppearanceLevel = Math.floor(enemyKillCount / BOSS_KILL_THRESHOLD);
+                        spawnBoss(bossAppearanceLevel);
+                        return; // FIX: Exit function since game state has fundamentally changed.
+                    }
+                    break;
+                }
+            }
             if (!lasers[i]) continue;
             for (let j = zomEnemies.length - 1; j >= 0; j--) { if (!zomEnemies[j]) continue; const z = zomEnemies[j]; const dx = l.x - z.x, dy = l.y - z.y; const dist = Math.sqrt(dx * dx + dy * dy); if (dist < (l.height / 2 + z.width / 2) * 0.85) { lasers.splice(i, 1); zomEnemies.splice(j, 1); score += POINTS_PER_ZOM; updateScoreAndLevel(); break; } }
         }
