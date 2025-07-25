@@ -91,6 +91,14 @@ canvas { display: block; background-color: #000; width: 100%; height: 100%; }
 #lives::before { content: "\2764\00a0"; color: #FF4444; } #lives { color: #ffaaaa; }
 #level::before { content: "\21EA\00a0"; color: #88ccff; } #level { color: #aaaaff; }
 
+/* === NUEVOS ESTILOS PARA EL INDICADOR DE HABILIDAD === */
+#ability-status { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+#ability-icon-container { width: 50px; height: 50px; background-color: rgba(0, 0, 0, 0.4); border: 1px solid #555; border-radius: 5px; display: flex; justify-content: center; align-items: center; }
+#ability-icon { max-width: 90%; max-height: 90%; display: none; /* Oculto por defecto */ }
+#cooldown-bar-container { width: 50px; height: 6px; background-color: #222; border: 1px solid #555; border-radius: 3px; overflow: hidden; display: none; /* Oculto por defecto */ }
+#cooldown-bar { width: 100%; height: 100%; background-color: #ffae00; transform-origin: left; transition: transform 0.1s linear; }
+/* =================================================== */
+
 /* Controles Táctiles */
 #touch-controls { display: none; justify-content: space-between; align-items: center; width: 100%; max-width: 500px; padding: 15px 20px; box-sizing: border-box; flex-shrink: 0; user-select: none; -webkit-user-select: none; }
 #dpad { display: grid; grid-template-areas: ". up ." "left . right"; grid-template-columns: 60px 60px 60px; grid-template-rows: 60px 60px; gap: 5px; }

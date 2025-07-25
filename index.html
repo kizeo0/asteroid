@@ -48,6 +48,15 @@
                 <div id="lives">Vidas: 3</div>
                 <div id="level">Nivel: 1</div>
             </div>
+            <!-- NUEVO: Contenedor para el estado de la habilidad -->
+            <div id="ability-status">
+                <div id="ability-icon-container">
+                    <img id="ability-icon" src="" alt="Habilidad">
+                </div>
+                <div id="cooldown-bar-container">
+                    <div id="cooldown-bar"></div>
+                </div>
+            </div>
         </div>
         <div id="game-container">
             <canvas id="gameCanvas" width="800" height="600"></canvas>
@@ -82,7 +91,10 @@
     <audio id="cobraSound3" src="madeline/critica.mp3" preload="auto"></audio>
     <audio id="grenadeSound" src="madeline/river.mp3" preload="auto"></audio>
     <audio id="cajaAbiertaSound" src="cajaabierta.mp3" preload="auto"></audio>
-    <audio id="congeladoSound" src="congelado.mp3" preload="auto"></audio> <button id="pause-button"><img src="pausa.png" alt="Pausa"></button>
+    <audio id="congeladoSound" src="congelado.mp3" preload="auto"></audio>
+    <audio id="deadeyeSound" src="deadeye.mp3" preload="auto"></audio>
+
+    <button id="pause-button"><img src="pausa.png" alt="Pausa"></button>
 
     <div id="settings-modal">
         <div class="settings-content">
