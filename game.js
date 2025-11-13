@@ -110,6 +110,33 @@ const cajaAbiertaSound = document.getElementById('cajaAbiertaSound');
 const congeladoSound = document.getElementById('congeladoSound');
 const deadeyeSound = document.getElementById('deadeyeSound');
 
+// ===============================================================
+// ================ LISTAS DE RECURSOS A PRECARGAR ===============
+// ===============================================================
+
+// Añadimos las imágenes de la UI que no estaban en las variables del juego
+const configImg = new Image(); configImg.src = 'config.png';
+const pausaImg = new Image(); pausaImg.src = 'pausa.png';
+
+const ALL_GAME_IMAGES = [
+    playerImg, bgImg, enemyImages.lex, enemyImages.mau,
+    powerUpImages.fast_shot, powerUpImages.clear_screen, powerUpImages.ice, powerUpImages.deadeye,
+    bossImg, zomImg, bgMadelineImg, cobraImg, balaCobraImg, grenadeImg,
+    lootBoxImg, lootBoxOpenImg, playerIceImg, iceBulletImg,
+    enemyFrozenImages.lex, enemyFrozenImages.mau, enemyFrozenImages.zom,
+    deadeyeFilterImg,
+    configImg, pausaImg // Añadimos las imágenes de la UI
+];
+
+const ALL_GAME_MEDIA = [
+    bgMusic, shotSound, killSound, newStageSound, momoSound1, momoSound2,
+    bossMusic, kapumSound, zomSound, transitionVideo, madelineMusic,
+    ...cobraSounds, // Expande el array de sonidos de la cobra
+    grenadeSound, cajaAbiertaSound, congeladoSound, deadeyeSound
+];
+
+// ===============================================================
+
 // --- Configuración del Juego ---
 const PLAYER_SIZE = 80; const ENEMY_SIZE = 70; const ZOM_SIZE = 75; const POWERUP_SIZE = 60;
 const LASER_SPEED = 6; const PLAYER_TURN_SPEED = 0.09; const PLAYER_THRUST = 0.1; const FRICTION = 0.99;
@@ -417,6 +444,86 @@ function gameOver(message = "¡JUEGO TERMINADO!") {
 }
 
 // ===============================================================
+// =================== PRECARGADOR DE RECURSOS ===================
+// ===============================================================
+
+function startAssetPreload() {
+    const loadingScreen = document.getElementById('loading-screen');
+    const loadingBar = document.getElementById('loading-bar');
+    const loadingPercentage = document.getElementById('loading-percentage');
+
+    if (!loadingScreen || !loadingBar || !loadingPercentage) {
+        console.error("Error: No se encontraron los elementos de la pantalla de carga. Iniciando juego...");
+        initializeApp(); // Intenta iniciar el juego de todas formas
+        return;
+    }
+
+    const allAssets = [...ALL_GAME_IMAGES, ...ALL_GAME_MEDIA];
+    const totalAssets = allAssets.length;
+    let loadedAssets = 0;
+
+    if (totalAssets === 0) {
+        // No hay nada que cargar, ocultar y empezar
+        loadingScreen.style.display = 'none';
+        initializeApp();
+        return;
+    }
+
+    function updateProgress() {
+        loadedAssets++;
+        const percent = Math.round((loadedAssets / totalAssets) * 100);
+        
+        // Actualizar la UI de carga
+        if (loadingBar) loadingBar.style.width = percent + '%';
+        if (loadingPercentage) loadingPercentage.textContent = percent + '%';
+
+        // Comprobar si todo ha terminado
+        if (loadedAssets === totalAssets) {
+            // Esperamos un momento para que el usuario vea el 100%
+            setTimeout(() => {
+                if (loadingScreen) loadingScreen.style.display = 'none';
+                initializeApp(); // ¡Todo listo! Iniciar el juego
+            }, 400); // 400ms de espera
+        }
+    }
+
+    // Iterar sobre todos los assets y asignarles listeners
+    allAssets.forEach(asset => {
+        if (asset instanceof Image) {
+            // Manejar imágenes
+            if (asset.complete) {
+                // Si la imagen ya estaba en caché, contarla
+                updateProgress();
+            } else {
+                asset.onload = updateProgress;
+                asset.onerror = () => {
+                    console.warn(`Error al cargar imagen: ${asset.src}`);
+                    updateProgress(); // Contar como cargada de todos modos para no bloquear
+                };
+            }
+        } else if (asset instanceof HTMLMediaElement) {
+            // Manejar Audio y Video
+            // 'canplaythrough' es el evento más fiable
+            if (asset.readyState >= 4) { // 4 = HAVE_ENOUGH_DATA
+                // Si el medio ya está listo
+                updateProgress();
+            } else {
+                asset.addEventListener('canplaythrough', updateProgress, { once: true });
+                asset.onerror = () => {
+                    console.warn(`Error al cargar media: ${asset.src}`);
+                    updateProgress(); // Contar como cargada de todos modos
+                };
+            }
+        } else {
+            // Recurso desconocido
+            console.warn('Elemento desconocido en la lista de precarga:', asset);
+            updateProgress();
+        }
+    });
+}
+
+
+// ===============================================================
 // ================ INICIALIZACIÓN Y EVENT LISTENERS ===============
 // ===============================================================
 
@@ -449,4 +556,6 @@ function initializeApp() {
     hitPlayerButton.addEventListener('click', () => { if (gameRunning) { isGodMode = false; godModeCheckbox.checked = false; hitPlayer(); } });
 }
 
-initializeApp();
+// Inicia el precargador cuando la ventana esté lista,
+// el precargador llamará a initializeApp() cuando termine.
+window.addEventListener('load', startAssetPreload);
